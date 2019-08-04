@@ -1,6 +1,22 @@
 import scrapy
 
 
+def is_valid_list(userin, example_list):
+    """
+    takes a users string input, attempts to split it into numbers and validate
+    that those numbers are valid indexes of example_list
+    """
+    try:
+        numlist = userin.split(',')
+        numlist = [int(s) for s in numlist]
+        numlist = set(numlist)
+    except ValueError:
+        return False
+    for num in numlist:
+        if not num >= 0 and num <= len(example_list) - 1:
+            return False
+    return True
+
 class WordSpider(scrapy.Spider):
     name = 'wordspider'
 
@@ -36,9 +52,24 @@ class WordSpider(scrapy.Spider):
             '''
             target = verbose_example.split('<div class="v2-sentence-source">',
                                            1)[0]
-            target = target.split('\n',1)[1].strip() + '\n'
+            target = target.split('\n', 1)[1].strip() + '\n'
+            target = target.replace('<b>', '')
+            target = target.replace('</b>', '')
             output_list.append(target)
+        print('\n')
+        print('\n')
+        for num, sentence in enumerate(output_list):
+            print(f'{num} - {sentence[:-1]}')
+        print('\n')
+        print('\n')
+        userchoice = input('Enter the numbers of the examples above which you would like to save, separated by commas: ')
+        while not is_valid_list(userchoice, output_list):
+            userchoice = input('It seems what you entered is not valid.Please enter the numbers of the xamples you would like to save separated by commas: ')
+        userchoice = userchoice.split(',')
+        userchoice = [int(s) for s in userchoice]
+        userchoice = set(userchoice)
         with open(filename, 'w') as f:
-            for example in output_list:
-                f.write(example)
+            for num, example in enumerate(output_list):
+                if num in userchoice:
+                    f.write(example)
         self.log(f'Saved file {filename}')
