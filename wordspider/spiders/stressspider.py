@@ -28,6 +28,27 @@ def clean_scraped(scrapedstring):
     return scrapedstring
 
 
+def color_stress(stressed_line):
+    """
+    takes a string containing a scraped html element with the correct stress
+    for the target word (marked with a bold html tag)
+    (e.g. '<div class="rule ">\n\t\n\t\t В таком варианте ударение следует
+    ставить на слог с буквой О — г<b>О</b>ры. \n\t\t\t</div>')
+    returns a string containing just the target word with the bold tag replaced
+    by a color tag and the stressed vowel in lower case.
+    """
+    stressed_line = stressed_line.replace('<div class="rule ">', '')
+    stressed_line = stressed_line.replace('\n', '')
+    stressed_line = stressed_line.replace('\t', '')
+    stressed_line = stressed_line.replace('.', '')
+    stressed_line = stressed_line.lower()
+    for word in stressed_line.split():
+        if '<b>' in word:
+            target = word.replace('<b>', "<font color='#0000ff'>")
+            target = target.replace('</b>', '</font>')
+            return target
+
+
 class WordSpider(scrapy.Spider):
     name = 'stressspider'
 
@@ -73,6 +94,12 @@ class WordSpider(scrapy.Spider):
             userselect = input('It appears there is more than one option for stressing this word. Please enter the number corresponding to the appropriate stress: ')
             while not input_isvalid(userselect, stresses_clean):
                 userselect = input('It appears you did not enter a valid choice. Please enter the number corresponding to the appropriate stress: ')
+            stressed_line = stresses[int(userselect) - 1]
+        else:
+            stressed_line = stresses[0]
+        target_word = color_stress(stressed_line)
+        print(target_word)
+
         # for verbose_stress in stresses:
         #
         #     target = verbose_example.split('<div class="v2-sentence-source">',
