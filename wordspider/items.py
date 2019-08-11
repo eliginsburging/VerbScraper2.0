@@ -11,4 +11,10 @@ import scrapy
 class WordspiderItem(scrapy.Item):
     # define the fields for your item here like:
     # name = scrapy.Field()
-    pass
+    example = scrapy.Field()
+    translation = scrapy.Field()
+
+
+class StressspiderItem(scrapy.Item):
+    stressed = scrapy.Field()
+    clean = scrapy.Field()

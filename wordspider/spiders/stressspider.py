@@ -1,7 +1,13 @@
 import scrapy
+from scrapy.loader import ItemLoader
+from wordspider.items import StressspiderItem
 
+vowels = 'аяэеоуюиы' # used to check if word needs stress
+sentence_list = []
+"""used for displaying the sentence the word came from if two or more stress
+variants appear. The user will be prompted to choose the variant appropriate
+for the sentence"""
 
-vowels = 'аяэеоуюиы'
 
 def input_isvalid(numstr, targetlist):
     """
@@ -18,7 +24,7 @@ def input_isvalid(numstr, targetlist):
 def clean_scraped(scrapedstring):
     """
     takes a scraped string and removes html tags, newlines, and tags.
-    Returns the cleanedup string
+    Returns the cleaned up string
     """
     scrapedstring = scrapedstring.replace('<div class="word">', '')
     scrapedstring = scrapedstring.replace('</div>', '')
@@ -40,6 +46,7 @@ def color_stress(stressed_line):
     by a color tag and the stressed vowel in lower case.
     """
     stressed_line = stressed_line.replace('<div class="rule ">', '')
+    stressed_line = stressed_line.replace('</div>', '')
     stressed_line = stressed_line.replace('\n', '')
     stressed_line = stressed_line.replace('\t', '')
     stressed_line = stressed_line.replace('.', '')
@@ -72,11 +79,19 @@ class WordSpider(scrapy.Spider):
     name = 'stressspider'
 
     def start_requests(self):
+        """
+        The code below will need to be rewritten once the wordspider
+        outputs csv with examples and translations. At present it takes input
+        from a file containing example sentences on new lines, splits each line
+        into words and removes punctuation marks, and generates urls based on
+        the words.
+        """
         with open('ptenets.txt', 'r') as file:
             sentences = file.readlines()
             urls = []
             baseurl = 'https://где-ударение.рф/в-слове-'
             for sentence in sentences:
+                sentence_list.append(sentence.lower())
                 sentence = sentence.replace(',', '')
                 sentence = sentence.replace('.', '')
                 sentence = sentence.replace('!', '')
@@ -84,12 +99,15 @@ class WordSpider(scrapy.Spider):
                 sentence = sentence.replace('-', '')
                 sentence = sentence.lower()
                 words = sentence.split()
+                # create list of only words that need stress
                 targetwords = [word for word in words if needs_stress(word)]
                 urls += [baseurl + word + '/' for word in targetwords]
         for url in urls:
             yield scrapy.Request(url=url, callback=self.parse)
 
     def parse(self, response):
+        l = ItemLoader(item=StressspiderItem(), response=response)
+        # will output items with a clean (unstressed) version and a stressed version
         explanations = response.xpath('//div[@class="word"]').getall()
         """
         creates a list of the HTML elements containing the explanation of the
@@ -112,26 +130,56 @@ class WordSpider(scrapy.Spider):
         Some code here to isolate the text explanation and the stressed form
         For the stresssed form, replace bold tag with colored font tag
         """
-        explanations_clean = []
+        explanations_clean = [] # will hold cleaner versions of lists above
         stresses_clean = []
         for item in explanations:
             explanations_clean.append(clean_scraped(item))
         for item in stresses:
             stresses_clean.append(clean_scraped(item))
         if len(stresses_clean) > 1:
+            """Identify the target word. So that the full example sentence
+            from which it came can be desplayed to the user when prompting
+            selection of stress where there are multiple options. Apparently
+            the site with the stresses violates the principles allowed by idna,
+            so rather than decoding the url  (cyrillic urls are displayed in
+            punycode(?)), just find the word in the scraped content with the
+            bold tag. Then see which example contains that word and print it"""
+            for item in stresses:
+                for word in item.split():
+                    if '<b>' in word:
+                        word_of_interest = word.replace('<b>', '')
+                        word_of_interest = word_of_interest.replace(
+                            '</b>', '').lower()
+                        word_of_interest = word_of_interest.replace('.', '')
+                        break
+                break
+            for sentence in sentence_list:
+                if word_of_interest in sentence:
+                    print('\n' + sentence + '\n')
+            """Prompt user with choice of stress based on example sentence"""
             for i in range(len(stresses_clean)):
                 print(f'{i + 1} - {explanations_clean[i]}')
                 print(f'{i + 1} - {stresses_clean[i]}')
-            userselect = input('It appears there is more than one option for stressing this word. Please enter the number corresponding to the appropriate stress: ')
+            userselect = input('It appears there is more than one option for stressing this word. Please enter the number corresponding to the appropriate stress in the sentence above: ')
             while not input_isvalid(userselect, stresses_clean):
-                userselect = input('It appears you did not enter a valid choice. Please enter the number corresponding to the appropriate stress: ')
+                userselect = input('It appears you did not enter a valid choice. Please enter the number corresponding to the appropriate stress in the sentence above: ')
+            # if there are multiple options for stress, use the user's choice
             stressed_line = stresses[int(userselect) - 1]
         else:
+            # if only one option for stress exists, use that
             stressed_line = stresses[0]
-        target_word = color_stress(stressed_line)
-        filename = 'stresses.txt'
-        with open(filename, 'a') as f:
-            f.write(target_word + '\n')
+        # remove all words but the target and replace bold tag with color
+        target_word_stressed = color_stress(stressed_line)
+        # create version of word with no html tag which will also be saved
+        target_word_clean = target_word_stressed.replace(
+            "<font color='#0000ff'>", '')
+        target_word_clean = target_word_clean.replace('</font>', '')
+        l.add_value('stressed', target_word_stressed)
+        l.add_value('clean', target_word_clean)
+        return l.load_item()
+        # filename = 'stresses.txt'
+        # with open(filename, 'a') as f:
+        #     f.write(target_word_stressed + '\n')
 
         # for verbose_stress in stresses:
         #
