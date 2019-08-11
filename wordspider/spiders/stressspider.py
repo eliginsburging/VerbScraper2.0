@@ -1,6 +1,8 @@
 import scrapy
 
 
+vowels = 'аяэеоуюиы'
+
 def input_isvalid(numstr, targetlist):
     """
     takes a string of user input and returns true if it can be converted to
@@ -49,16 +51,45 @@ def color_stress(stressed_line):
             return target
 
 
+def needs_stress(word):
+    """
+    Takes a string containing a Russian word. Returns True if the word needs
+    stress marked (i.e. has more than 1 vowel and does not contain ё). returns
+    False otherwise
+    """
+    if 'ё' in word:
+        return False
+    vowel_count = 0
+    for letter in word:
+        if letter in vowels:
+            vowel_count += 1
+    if vowel_count > 1:
+        return True
+    return False
+
+
 class WordSpider(scrapy.Spider):
     name = 'stressspider'
 
     def start_requests(self):
-        urls = ['https://xn----8sbhebeda0a3c5a7a.xn--p1ai/%D0%B2-%D1%81%D0%BB%D0%BE%D0%B2%D0%B5-%D0%B3%D0%BE%D1%80%D1%8B/', ]
+        with open('ptenets.txt', 'r') as file:
+            sentences = file.readlines()
+            urls = []
+            baseurl = 'https://где-ударение.рф/в-слове-'
+            for sentence in sentences:
+                sentence = sentence.replace(',', '')
+                sentence = sentence.replace('.', '')
+                sentence = sentence.replace('!', '')
+                sentence = sentence.replace('?', '')
+                sentence = sentence.replace('-', '')
+                sentence = sentence.lower()
+                words = sentence.split()
+                targetwords = [word for word in words if needs_stress(word)]
+                urls += [baseurl + word + '/' for word in targetwords]
         for url in urls:
             yield scrapy.Request(url=url, callback=self.parse)
 
     def parse(self, response):
-        filename = 'ptenetsstress.txt'
         explanations = response.xpath('//div[@class="word"]').getall()
         """
         creates a list of the HTML elements containing the explanation of the
@@ -98,7 +129,9 @@ class WordSpider(scrapy.Spider):
         else:
             stressed_line = stresses[0]
         target_word = color_stress(stressed_line)
-        print(target_word)
+        filename = 'stresses.txt'
+        with open(filename, 'a') as f:
+            f.write(target_word + '\n')
 
         # for verbose_stress in stresses:
         #
