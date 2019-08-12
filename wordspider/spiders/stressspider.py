@@ -2,7 +2,7 @@ import scrapy
 from scrapy.loader import ItemLoader
 from wordspider.items import StressspiderItem
 
-vowels = 'аяэеоуюиы' # used to check if word needs stress
+vowels = 'аяэеоуюиы'  # used to check if word needs stress
 sentence_list = []
 """used for displaying the sentence the word came from if two or more stress
 variants appear. The user will be prompted to choose the variant appropriate
@@ -97,6 +97,8 @@ class WordSpider(scrapy.Spider):
                 sentence = sentence.replace('!', '')
                 sentence = sentence.replace('?', '')
                 sentence = sentence.replace('-', '')
+                sentence = sentence.replace('«', '')
+                sentence = sentence.replace('»', '')
                 sentence = sentence.lower()
                 words = sentence.split()
                 # create list of only words that need stress

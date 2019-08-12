@@ -1,4 +1,7 @@
 import scrapy
+import os
+from scrapy.loader import ItemLoader
+from wordspider.items import WordspiderItem
 
 
 def is_valid_list(userin, example_list):
@@ -17,17 +20,22 @@ def is_valid_list(userin, example_list):
             return False
     return True
 
+
 class WordSpider(scrapy.Spider):
     name = 'wordspider'
 
     def start_requests(self):
-        urls = ['https://kartaslov.ru/предложения-со-словом/птенец', ]
+        print(os.path.dirname(__file__))
+        with open('wordspider/toscrape.txt', 'r') as f:
+            words = f.readlines()
+        urls = ['https://kartaslov.ru/предложения-со-словом/' +
+                word[:-1] for word in words]
         for url in urls:
+            print(url)
             yield scrapy.Request(url=url, callback=self.parse)
 
     def parse(self, response):
-        print('we')
-        filename = 'ptenets.txt'
+        l = ItemLoader(item=WordspiderItem(), response=response)
         output_list = []
         examples = response.xpath(
             "//div[@class='v2-sentence-box'][not(@style='display: inline-block;')][not(@style='height: 317px; padding-bottom: 25px;  padding-top: 5px; display: inline-block;')]").getall()
@@ -68,8 +76,28 @@ class WordSpider(scrapy.Spider):
         userchoice = userchoice.split(',')
         userchoice = [int(s) for s in userchoice]
         userchoice = set(userchoice)
-        with open(filename, 'w') as f:
-            for num, example in enumerate(output_list):
-                if num in userchoice:
-                    f.write(example)
-        self.log(f'Saved file {filename}')
+        for num, example in enumerate(output_list):
+            if num in userchoice:
+                print(example)
+                translation = input(
+                    "Please enter a translation for the sentence above: "
+                )
+
+                satisfied = False
+                while not satisfied:
+                    print("\nyou entered:\n")
+                    print(translation)
+                    confirm = input("Is that correct? y/n: ")
+                    while confirm != 'y' and confirm != 'n':
+                        confirm = input(
+                            "\ninvalid selection. Please enter y or n. ")
+                    if confirm == 'y':
+                        satisfied = True
+                    else:
+                        print(example)
+                        translation = input(
+                            "Please enter a translation for the sentence above: "
+                        )
+                l.add_value('example', example[:-1])
+                l.add_value('translation', translation)
+        return l.load_item()
