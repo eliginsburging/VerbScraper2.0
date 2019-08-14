@@ -1,4 +1,5 @@
 import scrapy
+import csv
 from scrapy.loader import ItemLoader
 from wordspider.items import StressspiderItem
 
@@ -86,11 +87,16 @@ class WordSpider(scrapy.Spider):
         into words and removes punctuation marks, and generates urls based on
         the words.
         """
-        with open('ptenets.txt', 'r') as file:
-            sentences = file.readlines()
+        with open('examples.csv', 'r') as file:
+            fieldnames = []
+            for i, l in enumerate(file):
+                fieldnames.append(i)
+        with open('examples.csv') as csv_file:
+            reader = csv.DictReader(csv_file)
             urls = []
             baseurl = 'https://где-ударение.рф/в-слове-'
-            for sentence in sentences:
+            for row in reader:
+                sentence = row['example']
                 sentence_list.append(sentence.lower())
                 sentence = sentence.replace(',', '')
                 sentence = sentence.replace('.', '')
@@ -99,6 +105,8 @@ class WordSpider(scrapy.Spider):
                 sentence = sentence.replace('-', '')
                 sentence = sentence.replace('«', '')
                 sentence = sentence.replace('»', '')
+                sentence = sentence.replace(':', '')
+                sentence = sentence.replace(';', '')
                 sentence = sentence.lower()
                 words = sentence.split()
                 # create list of only words that need stress
