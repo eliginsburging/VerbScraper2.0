@@ -111,6 +111,7 @@ class WordSpider(scrapy.Spider):
                 words = sentence.split()
                 # create list of only words that need stress
                 targetwords = [word for word in words if needs_stress(word)]
+                targetwords = set(targetwords)
                 urls += [baseurl + word + '/' for word in targetwords]
         for url in urls:
             yield scrapy.Request(url=url, callback=self.parse)
