@@ -16,7 +16,7 @@ def is_valid_list(userin, example_list):
     except ValueError:
         return False
     for num in numlist:
-        if not num >= 0 and num <= len(example_list) - 1:
+        if num < 0 or num > len(example_list) - 1:
             return False
     return True
 
