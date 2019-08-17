@@ -1,6 +1,7 @@
 import scrapy
 import csv
 import logging
+from urllib import parse
 from scrapy.loader import ItemLoader
 from wordspider.items import StressspiderItem
 
@@ -13,16 +14,29 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(filename='stresspider.log')
 
 
-def input_isvalid(numstr, targetlist):
+def input_isvalid(numstr, target):
     """
-    takes a string of user input and returns true if it can be converted to
-    an int which is a valid index of targetlist
+    takes a string of user input and an iterable;
+    returns true if it can be converted to an int
+    which is a valid index of target
     """
     try:
         numstr = int(numstr)
     except ValueError:
         return False
-    return numstr - 1 >= 0 and numstr - 1 <= len(targetlist - 1)
+    return numstr - 1 >= 0 and numstr - 1 <= len(target) - 1
+
+
+def yesno_isvalid(userstring):
+    """
+    returns true if userstring is 'Y','y','n', or 'N'; false otherwise
+    """
+    userstring = userstring.lower()
+    if len(userstring) != 1:
+        return False
+    if userstring in "yYnN":
+        return True
+    return False
 
 
 def clean_scraped(scrapedstring):
@@ -60,6 +74,21 @@ def color_stress(stressed_line):
             target = word.replace('<b>', "<font color='#0000ff'>")
             target = target.replace('</b>', '</font>')
             return target
+
+
+def man_stress(word, index):
+    """
+    takes a string and an int that is an index of that string;
+    returns a copy of the string where the character at that
+    index has been surrounded by an html font tag
+    """
+    return (
+        word[:index] +
+        "<font color='#0000ff'>" +
+        word[index] +
+        "</font>" +
+        word[index + 1:]
+    )
 
 
 def needs_stress(word):
@@ -106,7 +135,7 @@ class WordSpider(scrapy.Spider):
                 sentence = sentence.replace('.', '')
                 sentence = sentence.replace('!', '')
                 sentence = sentence.replace('?', '')
-                sentence = sentence.replace('-', '')
+                sentence = sentence.replace('—', '')
                 sentence = sentence.replace('«', '')
                 sentence = sentence.replace('»', '')
                 sentence = sentence.replace(':', '')
@@ -121,12 +150,51 @@ class WordSpider(scrapy.Spider):
             yield scrapy.Request(url=url, callback=self.parse)
 
     def parse(self, response):
+        word_of_interest = parse.unquote(response.url)[49:-1]
+        l = ItemLoader(item=StressspiderItem(), response=response)
         if response.status == 404:
-            warning = f'\n\n\nWARNING: {response.url} failed\n\n\n'
-            print(warning)
+            warning = f'\n\n\nWARNING: {word_of_interest} failed\n\n\n'
             self.logger.warning(warning)
+            print(f"It appears no stress could be found for {word_of_interest}")
+            manual_stress = input("Would you like to enter a stress manually? y/n: ")
+            while not yesno_isvalid(manual_stress):
+                manual_stress = input(
+                    "Invalid entry. Please enter y or n: ")
+            if manual_stress in "yY":
+                user_satisfied = False
+                while not user_satisfied:
+                    for letter in word_of_interest:
+                        print(f'{letter:3s}', end=" ")
+                    print(' ')
+                    for i in range(len(word_of_interest)):
+                        print(f'{str(i):3s}', end=" ")
+                    print(' ')
+                    stress_choice = input(
+                        "Please enter the number of the letter you wish to stress: ")
+                    while not input_isvalid(stress_choice, word_of_interest):
+                        for letter in word_of_interest:
+                            print(f'{letter:3s}', end=" ")
+                            print(' ')
+                        for i in range(len(word_of_interest)):
+                            print(f'{str(i):3s}', end=" ")
+                            print(' ')
+                        stress_choice = input(
+                            "Invalid entry. Please select one of the numbers listed above")
+                    is_satisfied = input(
+                        f"You want to place the stress on '{word_of_interest[int(stress_choice)]}' at position {stress_choice}, correct? y/n "
+                    )
+                    while not yesno_isvalid(is_satisfied):
+                        is_satisfied = input(
+                            "Invalid entry. Please enter y or n: "
+                        )
+                    if is_satisfied in "yY":
+                        user_satisfied = True
+                        target_word_stressed = man_stress(word_of_interest,
+                                                          int(stress_choice))
+                        l.add_value('stressed', target_word_stressed)
+                        l.add_value('clean', word_of_interest)
+                        return l.load_item()
         else:
-            l = ItemLoader(item=StressspiderItem(), response=response)
             # will output items with a clean (unstressed) version and a stressed version
             explanations = response.xpath('//div[@class="word"]').getall()
             """
@@ -146,10 +214,6 @@ class WordSpider(scrapy.Spider):
             '<div class="rule ">\n\t\n\t\t В таком варианте ударение следует
             ставить на слог с буквой О — г<b>О</b>ры. \n\t\t\t</div>']
             """
-            """
-            Some code here to isolate the text explanation and the stressed form
-            For the stresssed form, replace bold tag with colored font tag
-            """
             explanations_clean = [] # will hold cleaner versions of lists above
             stresses_clean = []
             for item in explanations:
@@ -157,22 +221,6 @@ class WordSpider(scrapy.Spider):
             for item in stresses:
                 stresses_clean.append(clean_scraped(item))
             if len(stresses_clean) > 1:
-                """Identify the target word. So that the full example sentence
-                from which it came can be desplayed to the user when prompting
-                selection of stress where there are multiple options. Apparently
-                the site with the stresses violates the principles allowed by idna,
-                so rather than decoding the url  (cyrillic urls are displayed in
-                punycode(?)), just find the word in the scraped content with the
-                bold tag. Then see which example contains that word and print it"""
-                for item in stresses:
-                    for word in item.split():
-                        if '<b>' in word:
-                            word_of_interest = word.replace('<b>', '')
-                            word_of_interest = word_of_interest.replace(
-                                '</b>', '').lower()
-                            word_of_interest = word_of_interest.replace('.', '')
-                            break
-                    break
                 for sentence in sentence_list:
                     if word_of_interest in sentence:
                         print('\n' + sentence + '\n')
@@ -190,24 +238,6 @@ class WordSpider(scrapy.Spider):
                 stressed_line = stresses[0]
             # remove all words but the target and replace bold tag with color
             target_word_stressed = color_stress(stressed_line)
-            # create version of word with no html tag which will also be saved
-            target_word_clean = target_word_stressed.replace(
-                "<font color='#0000ff'>", '')
-            target_word_clean = target_word_clean.replace('</font>', '')
             l.add_value('stressed', target_word_stressed)
-            l.add_value('clean', target_word_clean)
+            l.add_value('clean', word_of_interest)
             return l.load_item()
-        # filename = 'stresses.txt'
-        # with open(filename, 'a') as f:
-        #     f.write(target_word_stressed + '\n')
-
-        # for verbose_stress in stresses:
-        #
-        #     target = verbose_example.split('<div class="v2-sentence-source">',
-        #                                    1)[0]
-        #     target = target.split('\n',1)[1].strip() + '\n'
-        #     output_list.append(target)
-        # with open(filename, 'w') as f:
-        #     for example in output_list:
-        #         f.write(example)
-        # self.log(f'Saved file {filename}')
