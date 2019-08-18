@@ -35,7 +35,6 @@ class WordSpider(scrapy.Spider):
             yield scrapy.Request(url=url, callback=self.parse)
 
     def parse(self, response):
-        l = ItemLoader(item=WordspiderItem(), response=response)
         output_list = []
         examples = response.xpath(
             "//div[@class='v2-sentence-box'][not(@style='display: inline-block;')][not(@style='height: 317px; padding-bottom: 25px;  padding-top: 5px; display: inline-block;')]").getall()
@@ -98,6 +97,7 @@ class WordSpider(scrapy.Spider):
                         translation = input(
                             "Please enter a translation for the sentence above: "
                         )
+                l = ItemLoader(item=WordspiderItem(), response=response)
                 l.add_value('example', example[:-1])
                 l.add_value('translation', translation)
-        return l.load_item()
+                yield l.load_item()
