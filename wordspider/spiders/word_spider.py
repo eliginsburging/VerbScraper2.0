@@ -4,6 +4,20 @@ from scrapy.loader import ItemLoader
 from wordspider.items import WordspiderItem
 
 
+class colors:
+    red = "\033[31m"
+    green = "\033[32m"
+    yellow = "\033[33m"
+    blue = "\033[34m"
+    magenta = "\033[35m"
+    cyan = "\033[36m"
+    white = "\033[37m"
+    reset = "\033[0m"
+
+
+divider1 = colors.green + ("&" * 100) + colors.reset
+
+
 def is_valid_list(userin, example_list):
     """
     takes a users string input, attempts to split it into numbers and validate
@@ -63,39 +77,47 @@ class WordSpider(scrapy.Spider):
             target = target.replace('<b>', '')
             target = target.replace('</b>', '')
             output_list.append(target)
-        print('\n')
-        print('\n')
+        print(divider1)
+        print(divider1)
         for num, sentence in enumerate(output_list):
             print(f'{num} - {sentence[:-1]}')
-        print('\n')
-        print('\n')
-        userchoice = input('Enter the numbers of the examples above which you would like to save, separated by commas: ')
+        print()
+        userchoice = input(colors.cyan + 'Enter the numbers of the examples above which you would like to save, separated by commas: ' + colors.reset)
         while not is_valid_list(userchoice, output_list):
-            userchoice = input('It seems what you entered is not valid.Please enter the numbers of the xamples you would like to save separated by commas: ')
+            userchoice = input(colors.cyan + 'Invalid choice. Please enter the numbers of the xamples you would like to save separated by commas: ' + colors.reset)
         userchoice = userchoice.split(',')
         userchoice = [int(s) for s in userchoice]
         userchoice = set(userchoice)
         for num, example in enumerate(output_list):
             if num in userchoice:
+                print()
                 print(example)
                 translation = input(
-                    "Please enter a translation for the sentence above: "
+                    colors.cyan +
+                    "Please enter a translation for the sentence above: " +
+                    colors.reset
                 )
 
                 satisfied = False
                 while not satisfied:
                     print("\nyou entered:\n")
-                    print(translation)
-                    confirm = input("Is that correct? y/n: ")
+                    print(colors.yellow + translation + colors.reset)
+                    confirm = input(
+                        colors.cyan + "Is that correct? y/n: " + colors.reset)
                     while confirm != 'y' and confirm != 'n':
                         confirm = input(
-                            "\ninvalid selection. Please enter y or n. ")
+                            "\n" +
+                            colors.cyan +
+                            "invalid selection. Please enter y or n. " +
+                            colors.reset)
                     if confirm == 'y':
                         satisfied = True
                     else:
                         print(example)
                         translation = input(
-                            "Please enter a translation for the sentence above: "
+                            colors.cyan +
+                            "Please enter a translation for the sentence above: " +
+                            colors.reset
                         )
                 l = ItemLoader(item=WordspiderItem(), response=response)
                 l.add_value('example', example[:-1])

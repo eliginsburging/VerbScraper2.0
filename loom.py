@@ -1,5 +1,5 @@
 import csv
-
+from wordspider.spiders.word_spider import colors
 
 def word_list(string):
     """
@@ -36,6 +36,10 @@ with open('examples.csv') as ex:
         streader = csv.DictReader(stresses)
         stress_dict = {}
         linestowrite = []
+        """
+        create master dictionary of stresses. keys are unstressed words
+        and values are lists of potential stresses for the word
+        """
         for row in streader:
             if row['clean'] in stress_dict.keys():
                 stress_dict[row['clean']].append(row['stressed'])
@@ -47,17 +51,25 @@ with open('examples.csv') as ex:
             for i, word in enumerate(example_words):
                 if word in stress_dict.keys():
                     if len(stress_dict[word]) > 1:
-                        print(row['example'])
-                        print(row['translation'])
-                        print(f'Word {i + 1} in the example above has {len(stress_dict[word])} stress options')
+                        print(colors.green + row['example'])
+                        print(row['translation'] + colors.reset)
+                        print(colors.green +
+                              f'Word {i + 1} in the example above has {len(stress_dict[word])} stress options' +
+                              colors.reset)
                         for e, option in enumerate(stress_dict[word]):
-                            print(f'{e + 1} -- {option}')
+                            print(colors.cyan +
+                                  f'{e + 1} -- {option}' +
+                                  colors.reset)
                         user_in = input(
-                            f'Please enter the appropriate stress for word {i +1}: '
+                            colors.green +
+                            f'Please enter the appropriate stress for word {i +1}: ' +
+                            colors.reset
                         )
                         while not input_isvalid(user_in, stress_dict[word]):
                             user_in = input(
-                                'Invalid entry. Please enter a number corresponding to a choice above: '
+                                colors.green +
+                                'Invalid entry. Please enter a number corresponding to a choice above: ' +
+                                colors.reset
                             )
                         tentative_text = tentative_text.replace(
                             word, stress_dict[word][int(user_in) - 1], 1
