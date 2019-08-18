@@ -39,19 +39,19 @@ def yesno_isvalid(userstring):
     return False
 
 
-def clean_scraped(scrapedstring):
-    """
-    takes a scraped string and removes html tags, newlines, and tags.
-    Returns the cleaned up string
-    """
-    scrapedstring = scrapedstring.replace('<div class="word">', '')
-    scrapedstring = scrapedstring.replace('</div>', '')
-    scrapedstring = scrapedstring.replace('\n', '')
-    scrapedstring = scrapedstring.replace('\t', '')
-    scrapedstring = scrapedstring.replace('<div class="rule ">', '')
-    scrapedstring = scrapedstring.replace('<b>', '')
-    scrapedstring = scrapedstring.replace('</b>', '')
-    return scrapedstring
+# def clean_scraped(scrapedstring):
+#     """
+#     takes a scraped string and removes html tags, newlines, and tags.
+#     Returns the cleaned up string
+#     """
+#     scrapedstring = scrapedstring.replace('<div class="word">', '')
+#     scrapedstring = scrapedstring.replace('</div>', '')
+#     scrapedstring = scrapedstring.replace('\n', '')
+#     scrapedstring = scrapedstring.replace('\t', '')
+#     scrapedstring = scrapedstring.replace('<div class="rule ">', '')
+#     scrapedstring = scrapedstring.replace('<b>', '')
+#     scrapedstring = scrapedstring.replace('</b>', '')
+#     return scrapedstring
 
 
 def color_stress(stressed_line):
@@ -151,7 +151,6 @@ class WordSpider(scrapy.Spider):
 
     def parse(self, response):
         word_of_interest = parse.unquote(response.url)[49:-1]
-        l = ItemLoader(item=StressspiderItem(), response=response)
         if response.status == 404:
             warning = f'\n\n\nWARNING: {word_of_interest} failed\n\n\n'
             self.logger.warning(warning)
@@ -214,30 +213,22 @@ class WordSpider(scrapy.Spider):
             '<div class="rule ">\n\t\n\t\t В таком варианте ударение следует
             ставить на слог с буквой О — г<b>О</b>ры. \n\t\t\t</div>']
             """
-            explanations_clean = [] # will hold cleaner versions of lists above
-            stresses_clean = []
-            for item in explanations:
-                explanations_clean.append(clean_scraped(item))
-            for item in stresses:
-                stresses_clean.append(clean_scraped(item))
-            if len(stresses_clean) > 1:
-                for sentence in sentence_list:
-                    if word_of_interest in sentence:
-                        print('\n' + sentence + '\n')
-                """Prompt user with choice of stress based on example sentence"""
-                for i in range(len(stresses_clean)):
-                    print(f'{i + 1} - {explanations_clean[i]}')
-                    print(f'{i + 1} - {stresses_clean[i]}')
-                userselect = input('It appears there is more than one option for stressing this word. Please enter the number corresponding to the appropriate stress in the sentence above: ')
-                while not input_isvalid(userselect, stresses_clean):
-                    userselect = input('It appears you did not enter a valid choice. Please enter the number corresponding to the appropriate stress in the sentence above: ')
-                # if there are multiple options for stress, use the user's choice
-                stressed_line = stresses[int(userselect) - 1]
+            if len(stresses) > 1:
+                # if there is more than one stress variant, add all options
+                for line in stresses:
+                    l = ItemLoader(item=StressspiderItem(), response=response)
+                    target_word_stressed = color_stress(line)
+                    l.add_value('stressed', target_word_stressed)
+                    print(f'added {target_word_stressed} and {word_of_interest}')
+                    l.add_value('clean', word_of_interest)
+                    yield l.load_item()
             else:
-                # if only one option for stress exists, use that
+                l = ItemLoader(item=StressspiderItem(), response=response)
+                # if only one option for stress exists, add it
                 stressed_line = stresses[0]
-            # remove all words but the target and replace bold tag with color
-            target_word_stressed = color_stress(stressed_line)
-            l.add_value('stressed', target_word_stressed)
-            l.add_value('clean', word_of_interest)
-            return l.load_item()
+                # isolate target word and mark stress with color html tag
+                target_word_stressed = color_stress(stressed_line)
+                l.add_value('stressed', target_word_stressed)
+                l.add_value('clean', word_of_interest)
+                print(f'added {target_word_stressed} and {word_of_interest}')
+                yield l.load_item()
