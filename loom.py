@@ -60,11 +60,11 @@ with open('examples.csv') as ex:
                                 'Invalid entry. Please enter a number corresponding to a choice above: '
                             )
                         tentative_text = tentative_text.replace(
-                            word, stress_dict[word][int(user_in) - 1]
+                            word, stress_dict[word][int(user_in) - 1], 1
                         )
                     else:
                         tentative_text = tentative_text.replace(
-                            word, stress_dict[word][0]
+                            word, stress_dict[word][0], 1
                         )
             linestowrite.append(
                 tentative_text + ';' + row['translation'] + '\n')
