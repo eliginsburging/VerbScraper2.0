@@ -92,9 +92,19 @@ def weave():
                             tentative_text = tentative_text.replace(
                                 word, stress_dict[word][int(user_in) - 1], 1
                             )
+                            tentative_text = tentative_text.replace(
+                                word.capitalize(),
+                                stress_dict[word][int(user_in) -1].capitalize(),
+                                1
+                            )
                         else:
                             tentative_text = tentative_text.replace(
                                 word, stress_dict[word][0], 1
+                            )
+                            tentative_text = tentative_text.replace(
+                                word.capitalize(),
+                                stress_dict[word][0].capitalize(),
+                                1
                             )
                 linestowrite.append(
                     tentative_text + ';' + row['translation'] + '\n')
