@@ -14,6 +14,7 @@ BOT_NAME = 'wordspider'
 SPIDER_MODULES = ['wordspider.spiders']
 NEWSPIDER_MODULE = 'wordspider.spiders'
 
+FEED_FORMAT = 'csv'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'wordspider (+http://www.yourdomain.com)'

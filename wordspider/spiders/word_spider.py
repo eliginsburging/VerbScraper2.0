@@ -37,7 +37,9 @@ def is_valid_list(userin, example_list):
 
 class WordSpider(scrapy.Spider):
     name = 'wordspider'
-
+    custom_settings = {
+        'FEED_URI': 'examples.csv'
+    }
     def start_requests(self):
         print(os.path.dirname(__file__))
         with open('wordspider/toscrape.txt', 'r') as f:

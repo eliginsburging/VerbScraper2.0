@@ -108,8 +108,11 @@ def needs_stress(word):
     return False
 
 
-class WordSpider(scrapy.Spider):
+class StressSpider(scrapy.Spider):
     name = 'stressspider'
+    custom_settings = {
+        'FEED_URI': 'stresses.csv'
+    }
     handle_httpstatus_list = [404]
 
     def start_requests(self):
