@@ -1,6 +1,7 @@
 import scrapy
 import os
 from scrapy.loader import ItemLoader
+from scrapy.exceptions import CloseSpider
 from wordspider.items import WordspiderItem
 from wordspider.spiders.stressspider import yesno_isvalid
 
@@ -83,12 +84,22 @@ class WordSpider(scrapy.Spider):
         print(divider1)
         print(divider1)
         satisfied = False
+        iters = 0
         while not satisfied:
+            iters += 1
+            if iters > 1000:
+                raise CloseSpider('Maxmimum iterations exceeded; while loop broken')
+                break
             for num, sentence in enumerate(output_list):
                 print(f'{num} - {sentence[:-1]}')
             print()
             userchoice = input(colors.cyan + 'Enter the numbers of the examples above which you would like to save, separated by commas: ' + colors.reset)
+            iter4 = 0
             while not is_valid_list(userchoice, output_list):
+                iter4 += 1
+                if iter4 > 1000:
+                    raise CloseSpider('Maxmimum iterations exceeded; while loop broken')
+                    break
                 userchoice = input(colors.cyan + 'Invalid choice. Please enter the numbers of the xamples you would like to save separated by commas: ' + colors.reset)
             userchoice = userchoice.split(',')
             userchoice = [int(s) for s in userchoice]
@@ -103,10 +114,15 @@ class WordSpider(scrapy.Spider):
                                colors.cyan +
                                "Is that correct? y/n: " +
                                colors.reset)
+            iters2 = 0
             while not yesno_isvalid(examplesok):
-                examplesok = (colors.cyan +
-                              "Invalid entry. Please enter y or n: " +
-                              colors.reset)
+                iters2 += 1
+                if iters2 > 1000:
+                    raise CloseSpider('Maxmimum iterations exceeded; while loop broken')
+                    break
+                examplesok = input(colors.cyan +
+                                   "Invalid entry. Please enter y or n: " +
+                                   colors.reset)
             if examplesok in "yY":
                 satisfied = True
         for num in userchoice:
@@ -119,12 +135,22 @@ class WordSpider(scrapy.Spider):
             )
 
             satisfied = False
+            iters3 = 0
             while not satisfied:
+                iters3 += 1
+                if iters3 > 1000:
+                    raise CloseSpider('Maxmimum iterations exceeded; while loop broken')
+                    break
                 print("\nyou entered:\n")
                 print(colors.yellow + translation + colors.reset)
                 confirm = input(
                     colors.cyan + "Is that correct? y/n: " + colors.reset)
+                iter5 = 0
                 while not yesno_isvalid(confirm):
+                    iter5 += 1
+                    if iter5 > 1000:
+                        raise CloseSpider('Maxmimum iterations exceeded; while loop broken')
+                        break
                     confirm = input(
                         "\n" +
                         colors.cyan +

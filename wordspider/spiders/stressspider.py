@@ -3,6 +3,7 @@ import csv
 import logging
 from urllib import parse
 from scrapy.loader import ItemLoader
+from scrapy.exceptions import CloseSpider
 from wordspider.items import StressspiderItem
 
 vowels = 'аяэеоуюиы'  # used to check if word needs stress
@@ -159,12 +160,22 @@ class StressSpider(scrapy.Spider):
             self.logger.warning(warning)
             print(f"It appears no stress could be found for {word_of_interest}")
             manual_stress = input("Would you like to enter a stress manually? y/n: ")
+            iter = 9
             while not yesno_isvalid(manual_stress):
+                iter += 1
+                if iter > 1000:
+                    raise CloseSpider('Maxmimum iterations exceeded; while loop broken')
+                    break
                 manual_stress = input(
                     "Invalid entry. Please enter y or n: ")
             if manual_stress in "yY":
                 user_satisfied = False
+                iters = 0
                 while not user_satisfied:
+                    iters += 1
+                    if iters > 1000:
+                        raise CloseSpider('Maxmimum iterations exceeded; while loop broken')
+                        break
                     for letter in word_of_interest:
                         print(f'{letter:3s}', end=" ")
                     print(' ')
@@ -173,7 +184,12 @@ class StressSpider(scrapy.Spider):
                     print(' ')
                     stress_choice = input(
                         "Please enter the number of the letter you wish to stress: ")
+                    iters2 = 0
                     while not input_isvalid(stress_choice, word_of_interest):
+                        iters2 += 1
+                        if iters2 > 1000:
+                            raise CloseSpider('Maxmimum iterations exceeded; while loop broken')
+                            break
                         for letter in word_of_interest:
                             print(f'{letter:3s}', end=" ")
                             print(' ')
@@ -185,7 +201,12 @@ class StressSpider(scrapy.Spider):
                     is_satisfied = input(
                         f"You want to place the stress on '{word_of_interest[int(stress_choice)]}' at position {stress_choice}, correct? y/n "
                     )
+                    iters3 = 0
                     while not yesno_isvalid(is_satisfied):
+                        iters3 += 1
+                        if iters3 > 1000:
+                            raise CloseSpider('Maxmimum iterations exceeded; while loop broken')
+                            break
                         is_satisfied = input(
                             "Invalid entry. Please enter y or n: "
                         )
