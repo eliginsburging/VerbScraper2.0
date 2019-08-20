@@ -144,6 +144,11 @@ class StressSpider(scrapy.Spider):
                 sentence = sentence.replace('»', '')
                 sentence = sentence.replace(':', '')
                 sentence = sentence.replace(';', '')
+                sentence = sentence.replace('(', '')
+                sentence = sentence.replace(')', '')
+                sentence = sentence.replace('[', '')
+                sentence = sentence.replace(']', '')
+                sentence = sentence.replace('/', '')
                 sentence = sentence.lower()
                 words = sentence.split()
                 # create list of only words that need stress
