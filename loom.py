@@ -69,8 +69,10 @@ def weave():
                 for i, word in enumerate(example_words):
                     if word in stress_dict.keys():
                         if len(stress_dict[word]) > 1:
-                            print(colors.green + row['example'])
+                            print()
+                            print(colors.yellow + row['example'])
                             print(row['translation'] + colors.reset)
+                            print()
                             print(colors.green +
                                   f'Word {i + 1} in the example above has {len(stress_dict[word])} stress options' +
                                   colors.reset)
@@ -78,14 +80,15 @@ def weave():
                                 print(colors.cyan +
                                       f'{e + 1} -- {option}' +
                                       colors.reset)
+                            print()
                             user_in = input(
-                                colors.green +
+                                colors.cyan +
                                 f'Please enter the appropriate stress for word {i +1}: ' +
                                 colors.reset
                             )
                             while not input_isvalid(user_in, stress_dict[word]):
                                 user_in = input(
-                                    colors.green +
+                                    colors.cyan +
                                     'Invalid entry. Please enter a number corresponding to a choice above: ' +
                                     colors.reset
                                 )
