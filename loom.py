@@ -24,7 +24,7 @@ def word_list(string):
 def input_isvalid(numstr, target):
     """
     takes a string of user input and an iterable;
-    returns true if it can be converted to an int
+    returns true if the string can be converted to an int
     which is a valid index of target
     """
     try:
@@ -32,6 +32,19 @@ def input_isvalid(numstr, target):
     except ValueError:
         return False
     return numstr - 1 >= 0 and numstr - 1 <= len(target) - 1
+
+
+def visual_stress(word):
+    """
+    Takes a string and returns that string without html font tags
+    and with the content which was surrounded by those tags capitalized
+    """
+    stress_index = word.index('>') + 1
+    marked_stress = (word[:stress_index] +
+                     word[stress_index].capitalize() +
+                     word[stress_index + 1:])
+    marked_stress = marked_stress.replace("<font color='#0000ff'>", "")
+    return marked_stress.replace("</font>", "")
 
 
 def weave():
@@ -70,27 +83,31 @@ def weave():
                     if word in stress_dict.keys():
                         if len(stress_dict[word]) > 1:
                             print()
-                            print(colors.yellow + row['example'])
-                            print(row['translation'] + colors.reset)
+                            print(colors.parrot(row['example']))
+                            print(colors.parrot(row['translation']))
                             print()
-                            print(colors.green +
-                                  f'Word {i + 1} in the example above has {len(stress_dict[word])} stress options' +
-                                  colors.reset)
+                            print(colors.prompt(
+                                f'Word {i + 1} in the example above has '
+                                f'{len(stress_dict[word])} stress options'
+                            ))
+                            print()
                             for e, option in enumerate(stress_dict[word]):
-                                print(colors.cyan +
-                                      f'{e + 1} -- {option}' +
-                                      colors.reset)
-                            print()
+                                print(
+                                    colors.prompt(f'{e + 1} -- '
+                                                  f'{visual_stress(option)}'))
+                                print()
                             user_in = input(
-                                colors.cyan +
-                                f'Please enter the appropriate stress for word {i +1}: ' +
-                                colors.reset
+                                colors.prompt(
+                                    f'Please enter the appropriate stress '
+                                    f'for word {i +1}: '
+                                )
                             )
                             while not input_isvalid(user_in, stress_dict[word]):
                                 user_in = input(
-                                    colors.cyan +
-                                    'Invalid entry. Please enter a number corresponding to a choice above: ' +
-                                    colors.reset
+                                    colors.warning(
+                                        'Invalid entry. Please enter a number '
+                                        'corresponding to a choice above: '
+                                    )
                                 )
                             tentative_text = tentative_text.replace(
                                 word, stress_dict[word][int(user_in) - 1], 1

@@ -16,8 +16,36 @@ class colors:
     white = "\033[37m"
     reset = "\033[0m"
 
+    def warning(message):
+        """
+        takes a string and returns that string surrounded by magenta and reset
+        ANSI codes
+        """
+        return colors.magenta + message + colors.reset
 
-divider1 = colors.green + ("&" * 100) + colors.reset
+    def information(message):
+        """
+        takes a string and returns that string surrounded by green and reset
+        ANSI codes
+        """
+        return colors.green + message + colors.reset
+
+    def prompt(message):
+        """
+        takes a string and returns that string surrounded by cyan and reset
+        ANSI codes
+        """
+        return colors.cyan + message + colors.reset
+
+    def parrot(message):
+        """
+        takes a string and returns that string surrounded by yellow and reset
+        ANSI codes
+        """
+        return colors.yellow + message + colors.reset
+
+
+divider1 = colors.information("&" * 100)
 
 
 def is_valid_list(userin, example_list):
@@ -88,50 +116,55 @@ class WordSpider(scrapy.Spider):
         while not satisfied:
             iters += 1
             if iters > 1000:
-                raise CloseSpider('Maxmimum iterations exceeded; while loop broken')
+                raise CloseSpider(
+                    'Maxmimum iterations exceeded; while loop broken')
                 break
             for num, sentence in enumerate(output_list):
                 print(f'{num} - {sentence[:-1]}')
             print()
-            userchoice = input(colors.cyan + 'Enter the numbers of the examples above which you would like to save, separated by commas: ' + colors.reset)
+            userchoice = input(
+                colors.prompt('Enter the numbers of the examples above which'
+                              'you would like to save, separated by commas: ')
+                )
             iter4 = 0
             while not is_valid_list(userchoice, output_list):
                 iter4 += 1
                 if iter4 > 1000:
-                    raise CloseSpider('Maxmimum iterations exceeded; while loop broken')
+                    raise CloseSpider(
+                        'Maxmimum iterations exceeded; while loop broken')
                     break
-                userchoice = input(colors.cyan + 'Invalid choice. Please enter the numbers of the xamples you would like to save separated by commas: ' + colors.reset)
+                userchoice = input(
+                    colors.warning(
+                        'Invalid choice. Please enter the numbers of the '
+                        'examples you would like to save separated by commas: '
+                        ))
             userchoice = userchoice.split(',')
             userchoice = [int(s) for s in userchoice]
             userchoice = set(userchoice)
             # ask user to confirm
-            print(colors.cyan + "you selected:" + colors.reset)
+            print(colors.prompt("you selected:"))
             for num in userchoice:
-                print(colors.yellow +
-                      f'{num} - {output_list[num]}' +
-                      colors.reset)
-            examplesok = input('\n' +
-                               colors.cyan +
-                               "Is that correct? y/n: " +
-                               colors.reset)
+                print(colors.parrot(f'{num} - {output_list[num]}'))
+            # print()
+            examplesok = input(colors.prompt("Is that correct? y/n: "))
             iters2 = 0
             while not yesno_isvalid(examplesok):
                 iters2 += 1
                 if iters2 > 1000:
-                    raise CloseSpider('Maxmimum iterations exceeded; while loop broken')
+                    raise CloseSpider(
+                        'Maxmimum iterations exceeded; while loop broken')
                     break
-                examplesok = input(colors.cyan +
-                                   "Invalid entry. Please enter y or n: " +
-                                   colors.reset)
+                examplesok = input(
+                    colors.warning("Invalid entry. Please enter y or n: ")
+                    )
             if examplesok in "yY":
                 satisfied = True
         for num in userchoice:
             print()
             print(output_list[num])
             translation = input(
-                colors.cyan +
-                "Please enter a translation for the sentence above: " +
-                colors.reset
+                colors.prompt(
+                    "Please enter a translation for the sentence above: ")
             )
 
             satisfied = False
@@ -139,31 +172,35 @@ class WordSpider(scrapy.Spider):
             while not satisfied:
                 iters3 += 1
                 if iters3 > 1000:
-                    raise CloseSpider('Maxmimum iterations exceeded; while loop broken')
+                    raise CloseSpider(
+                        'Maxmimum iterations exceeded; while loop broken')
                     break
-                print("\nyou entered:\n")
-                print(colors.yellow + translation + colors.reset)
+                print()
+                print(colors.prompt("you entered:"))
+                print()
+                print(colors.parrot(translation))
                 confirm = input(
-                    colors.cyan + "Is that correct? y/n: " + colors.reset)
+                    colors.prompt("Is that correct? y/n: "))
                 iter5 = 0
                 while not yesno_isvalid(confirm):
                     iter5 += 1
                     if iter5 > 1000:
-                        raise CloseSpider('Maxmimum iterations exceeded; while loop broken')
+                        raise CloseSpider(
+                            'Maxmimum iterations exceeded; while loop broken')
                         break
+                    print()
                     confirm = input(
-                        "\n" +
-                        colors.cyan +
-                        "invalid selection. Please enter y or n. " +
-                        colors.reset)
+                        colors.prompt(
+                            "invalid selection. Please enter y or n. "
+                        ))
                 if confirm in 'yY':
                     satisfied = True
                 else:
                     print(output_list[num])
                     translation = input(
-                        colors.cyan +
-                        "Please enter a translation for the sentence above: " +
-                        colors.reset
+                        colors.prompt(
+                            'Please enter a translation for the sentence '
+                            'above: ')
                     )
             l = ItemLoader(item=WordspiderItem(), response=response)
             l.add_value('example', output_list[num][:-1])
