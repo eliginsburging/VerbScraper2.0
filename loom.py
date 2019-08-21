@@ -47,6 +47,26 @@ def visual_stress(word):
     return marked_stress.replace("</font>", "")
 
 
+def success_banner(message):
+    """
+    Takes a string and prints that string surrounded by a green box of &s
+    """
+    message_len = len(message)
+    spacer = '   '
+    print(colors.information('&' * (message_len + 8)))
+    print(colors.information('&') +
+          (' ' * (message_len + 6)) +
+          colors.information('&'))
+    print(colors.information('&') +
+          spacer +
+          message +
+          spacer +
+          colors.information('&'))
+    print(colors.information('&') +
+          (' ' * (message_len + 6)) +
+          colors.information('&'))
+    print(colors.information('&' * (message_len + 8)))
+
 def weave():
     """
     runs word spider and stress spider, generating csv files.
@@ -128,9 +148,18 @@ def weave():
                             )
                 linestowrite.append(
                     tentative_text + ';' + row['translation'] + '\n')
+            cards_written = 0
             with open('flashcards.txt', 'w') as f:
                 for line in linestowrite:
                     f.write(line)
+                    cards_written += 1
+            if cards_written == 1:
+                message = (f'Success! {cards_written} card written to '
+                           f'flashcards.txt')
+            else:
+                message = (f'Success! {cards_written} cards written to '
+                           f'flashcards.txt')
+            success_banner(message)
     os.system('rm examples.csv')
     os.system('rm stresses.csv')
 
