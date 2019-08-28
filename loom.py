@@ -2,7 +2,8 @@ import csv
 import shlex
 import os
 from subprocess import Popen
-from wordspider.spiders.word_spider import colors
+from helpers import colors
+from helpers import yesno_isvalid
 
 
 def word_list(string):
@@ -67,6 +68,25 @@ def success_banner(message):
           colors.information('&'))
     print(colors.information('&' * (message_len + 8)))
 
+
+def man_input(dictionary, filename):
+    """
+    takes a dictionary where each key is a csv table column and each value is a
+    list of objects to be placed in that column
+    opens csv file with name filename and appends values with corresponding
+    indexes as rows in the dicionary
+    for instance, the dictionary might look like:
+    {'example': ['Russian example 1', 'Russian example 2'],
+    'translation': ['translation 1', 'translation 2']}
+    """
+    with open(filename, 'a') as csvfile:
+        fieldnames = ['example', 'translation']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        for i in range(len(dictionary['example'])):
+            writer.writerow({'example': dictionary['example'][i],
+                             'translation': dictionary['translation'][i]})
+
+
 def weave():
     """
     runs word spider and stress spider, generating csv files.
@@ -78,6 +98,35 @@ def weave():
     cmd = shlex.split('scrapy crawl wordspider')
     p = Popen(cmd)
     p.wait()
+    # prompt user for manually added examples in addition to crawled examples
+    # manual_dict = {'example': [],
+    #                'translation': []}
+    # enough = False
+    # itercount = 0
+    # while not enough:
+    #     itercount += 1
+    #     if itercount > 1000:
+    #         raise RuntimeError(
+    #             'Something went wrong. Maximum iterations exceeded when seeking user generated examples!')
+    #     user_in = input(colors.prompt(
+    #         'Would you like to enter any additional examples manually? y/n: '))
+    #     itercount2 = 0
+    #     while not yesno_isvalid(user_in):
+    #         itercount2 += 1
+    #         if itercount2 > 1000:
+    #             raise InterruptedError
+    #             print('Something went wrong; max iterations exceeded')
+    #             break
+    #         user_in = input(colors.prompt(
+    #             'Invalid entry, please enter y or n: '
+    #         ))
+    #     if user_in in 'Nn':
+    #         enough = True
+    #     else:
+            # prompt user for example
+            # prompt user for translation
+            # append user example and translation to dictionary lists
+    # if len dictionary lists > 0, write dictionary lists to examples.csv
     cmd2 = shlex.split('scrapy crawl stressspider')
     p2 = Popen(cmd2)
     p2.wait()
@@ -100,18 +149,18 @@ def weave():
                 tentative_text = row['example']
                 example_words = word_list(row['example'])
                 for i, word in enumerate(example_words):
-                    if word in stress_dict.keys():
-                        if len(stress_dict[word]) > 1:
+                    if word in stress_dict.keys() or word.lower() in stress_dict.keys():
+                        if len(stress_dict[word.lower()]) > 1:
                             print()
                             print(colors.parrot(row['example']))
                             print(colors.parrot(row['translation']))
                             print()
                             print(colors.prompt(
                                 f'Word {i + 1} in the example above has '
-                                f'{len(stress_dict[word])} stress options'
+                                f'{len(stress_dict[word.lower()])} stress options'
                             ))
                             print()
-                            for e, option in enumerate(stress_dict[word]):
+                            for e, option in enumerate(stress_dict[word.lower()]):
                                 print(
                                     colors.prompt(f'{e + 1} -- '
                                                   f'{visual_stress(option)}'))
@@ -122,7 +171,7 @@ def weave():
                                     f'for word {i +1}: '
                                 )
                             )
-                            while not input_isvalid(user_in, stress_dict[word]):
+                            while not input_isvalid(user_in, stress_dict[word.lower()]):
                                 user_in = input(
                                     colors.warning(
                                         'Invalid entry. Please enter a number '
@@ -130,22 +179,29 @@ def weave():
                                     )
                                 )
                             tentative_text = tentative_text.replace(
-                                word, stress_dict[word][int(user_in) - 1], 1
+                                word.lower(), stress_dict[word.lower()][int(user_in) - 1], 1
                             )
+                            print(f'replacing {word} with {stress_dict[word.lower()][int(user_in) - 1]}')
+                            print()
                             tentative_text = tentative_text.replace(
                                 word.capitalize(),
-                                stress_dict[word][int(user_in) -1].capitalize(),
+                                stress_dict[word.lower()][int(user_in) -1].capitalize(),
                                 1
                             )
+                            print(f'replacing {word.capitalize()} with {stress_dict[word.lower()][int(user_in) -1].capitalize()}')
+                            print()
                         else:
                             tentative_text = tentative_text.replace(
-                                word, stress_dict[word][0], 1
+                                word.lower(), stress_dict[word.lower()][0], 1
                             )
+                            print(f'replacing {word} with {stress_dict[word.lower()][0]}')
+                            print()
                             tentative_text = tentative_text.replace(
                                 word.capitalize(),
-                                stress_dict[word][0].capitalize(),
+                                stress_dict[word.lower()][0].capitalize(),
                                 1
                             )
+                            print(f'replacing {word.capitalize()} with {stress_dict[word.lower()][0].capitalize()}')
                 linestowrite.append(
                     tentative_text + ';' + row['translation'] + '\n')
             cards_written = 0

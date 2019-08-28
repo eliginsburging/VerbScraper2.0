@@ -4,109 +4,12 @@ import logging
 from urllib import parse
 from scrapy.loader import ItemLoader
 from scrapy.exceptions import CloseSpider
+from helpers import input_isvalid, yesno_prompt, color_stress, man_stress, needs_stress, colors
 from wordspider.items import StressspiderItem
 
-vowels = 'аяэеоуюиы'  # used to check if word needs stress
 sentence_list = []
-"""used for displaying the sentence the word came from if two or more stress
-variants appear. The user will be prompted to choose the variant appropriate
-for the sentence"""
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='stresspider.log')
-
-
-def input_isvalid(numstr, target):
-    """
-    takes a string of user input and an iterable;
-    returns true if it can be converted to an int
-    which is a valid index of target
-    """
-    try:
-        numstr = int(numstr)
-    except ValueError:
-        return False
-    return numstr - 1 >= 0 and numstr - 1 <= len(target) - 1
-
-
-def yesno_isvalid(userstring):
-    """
-    returns true if userstring is 'Y','y','n', or 'N'; false otherwise
-    """
-    userstring = userstring.lower()
-    if len(userstring) != 1:
-        return False
-    if userstring in "yYnN":
-        return True
-    return False
-
-
-# def clean_scraped(scrapedstring):
-#     """
-#     takes a scraped string and removes html tags, newlines, and tags.
-#     Returns the cleaned up string
-#     """
-#     scrapedstring = scrapedstring.replace('<div class="word">', '')
-#     scrapedstring = scrapedstring.replace('</div>', '')
-#     scrapedstring = scrapedstring.replace('\n', '')
-#     scrapedstring = scrapedstring.replace('\t', '')
-#     scrapedstring = scrapedstring.replace('<div class="rule ">', '')
-#     scrapedstring = scrapedstring.replace('<b>', '')
-#     scrapedstring = scrapedstring.replace('</b>', '')
-#     return scrapedstring
-
-
-def color_stress(stressed_line):
-    """
-    takes a string containing a scraped html element with the correct stress
-    for the target word (marked with a bold html tag)
-    (e.g. '<div class="rule ">\n\t\n\t\t В таком варианте ударение следует
-    ставить на слог с буквой О — г<b>О</b>ры. \n\t\t\t</div>')
-    returns a string containing just the target word with the bold tag replaced
-    by a color tag and the stressed vowel in lower case.
-    """
-    stressed_line = stressed_line.replace('<div class="rule ">', '')
-    stressed_line = stressed_line.replace('</div>', '')
-    stressed_line = stressed_line.replace('\n', '')
-    stressed_line = stressed_line.replace('\t', '')
-    stressed_line = stressed_line.replace('.', '')
-    stressed_line = stressed_line.lower()
-    for word in stressed_line.split():
-        if '<b>' in word:
-            target = word.replace('<b>', "<font color='#0000ff'>")
-            target = target.replace('</b>', '</font>')
-            return target
-
-
-def man_stress(word, index):
-    """
-    takes a string and an int that is an index of that string;
-    returns a copy of the string where the character at that
-    index has been surrounded by an html font tag
-    """
-    return (
-        word[:index] +
-        "<font color='#0000ff'>" +
-        word[index] +
-        "</font>" +
-        word[index + 1:]
-    )
-
-
-def needs_stress(word):
-    """
-    Takes a string containing a Russian word. Returns True if the word needs
-    stress marked (i.e. has more than 1 vowel and does not contain ё). returns
-    False otherwise
-    """
-    if 'ё' in word:
-        return False
-    vowel_count = 0
-    for letter in word:
-        if letter in vowels:
-            vowel_count += 1
-    if vowel_count > 1:
-        return True
-    return False
 
 
 class StressSpider(scrapy.Spider):
@@ -163,17 +66,13 @@ class StressSpider(scrapy.Spider):
         if response.status == 404:
             warning = f'\n\n\nWARNING: {word_of_interest} failed\n\n\n'
             self.logger.warning(warning)
-            print(f"It appears no stress could be found for {word_of_interest}")
-            manual_stress = input("Would you like to enter a stress manually? y/n: ")
-            iter = 9
-            while not yesno_isvalid(manual_stress):
-                iter += 1
-                if iter > 1000:
-                    raise CloseSpider('Maxmimum iterations exceeded; while loop broken')
-                    break
-                manual_stress = input(
-                    "Invalid entry. Please enter y or n: ")
-            if manual_stress in "yY":
+            print(
+                f"It appears no stress could be found for {word_of_interest}")
+            if yesno_prompt(
+                colors.prompt(
+                    'Would you like to enter a stress mannually? y/n: '),
+                colors.warning(
+                    'Invalid entry. Please enter y or n: ')):
                 user_satisfied = False
                 iters = 0
                 while not user_satisfied:
@@ -197,31 +96,24 @@ class StressSpider(scrapy.Spider):
                             break
                         for letter in word_of_interest:
                             print(f'{letter:3s}', end=" ")
-                            print(' ')
+                        print()
                         for i in range(len(word_of_interest)):
                             print(f'{str(i):3s}', end=" ")
-                            print(' ')
+                        print()
                         stress_choice = input(
-                            "Invalid entry. Please select one of the numbers listed above")
-                    is_satisfied = input(
-                        f"You want to place the stress on '{word_of_interest[int(stress_choice)]}' at position {stress_choice}, correct? y/n "
-                    )
-                    iters3 = 0
-                    while not yesno_isvalid(is_satisfied):
-                        iters3 += 1
-                        if iters3 > 1000:
-                            raise CloseSpider('Maxmimum iterations exceeded; while loop broken')
-                            break
-                        is_satisfied = input(
-                            "Invalid entry. Please enter y or n: "
-                        )
-                    if is_satisfied in "yY":
+                            "Invalid entry. Please select one of the numbers listed above ")
+                    if yesno_prompt(
+                        f"You want to place the stress on '{word_of_interest[int(stress_choice)]}' at position {stress_choice}, correct? y/n ",
+                        "Invalid entry. Please enter y or n: "
+                    ):
                         user_satisfied = True
                         target_word_stressed = man_stress(word_of_interest,
                                                           int(stress_choice))
+                        print(colors.warning(target_word_stressed))
+                        l = ItemLoader(item=StressspiderItem(), response=response)
                         l.add_value('stressed', target_word_stressed)
                         l.add_value('clean', word_of_interest)
-                        return l.load_item()
+                        yield l.load_item()
         else:
             # will output items with a clean (unstressed) version and a stressed version
             explanations = response.xpath('//div[@class="word"]').getall()

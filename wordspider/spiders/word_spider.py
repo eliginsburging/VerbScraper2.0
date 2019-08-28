@@ -1,68 +1,11 @@
 import scrapy
-import os
 from scrapy.loader import ItemLoader
 from scrapy.exceptions import CloseSpider
 from wordspider.items import WordspiderItem
-from wordspider.spiders.stressspider import yesno_isvalid
-
-
-class colors:
-    red = "\033[31m"
-    green = "\033[32m"
-    yellow = "\033[33m"
-    blue = "\033[34m"
-    magenta = "\033[35m"
-    cyan = "\033[36m"
-    white = "\033[37m"
-    reset = "\033[0m"
-
-    def warning(message):
-        """
-        takes a string and returns that string surrounded by magenta and reset
-        ANSI codes
-        """
-        return colors.magenta + message + colors.reset
-
-    def information(message):
-        """
-        takes a string and returns that string surrounded by green and reset
-        ANSI codes
-        """
-        return colors.green + message + colors.reset
-
-    def prompt(message):
-        """
-        takes a string and returns that string surrounded by cyan and reset
-        ANSI codes
-        """
-        return colors.cyan + message + colors.reset
-
-    def parrot(message):
-        """
-        takes a string and returns that string surrounded by yellow and reset
-        ANSI codes
-        """
-        return colors.yellow + message + colors.reset
+from helpers import yesno_prompt, colors, is_valid_list
 
 
 divider1 = colors.information("&" * 100)
-
-
-def is_valid_list(userin, example_list):
-    """
-    takes a users string input, attempts to split it into numbers and validate
-    that those numbers are valid indexes of example_list
-    """
-    try:
-        numlist = userin.split(',')
-        numlist = [int(s) for s in numlist]
-        numlist = set(numlist)
-    except ValueError:
-        return False
-    for num in numlist:
-        if num < 0 or num > len(example_list) - 1:
-            return False
-    return True
 
 
 class WordSpider(scrapy.Spider):
@@ -145,19 +88,10 @@ class WordSpider(scrapy.Spider):
             print(colors.prompt("you selected:"))
             for num in userchoice:
                 print(colors.parrot(f'{num} - {output_list[num]}'))
-            # print()
-            examplesok = input(colors.prompt("Is that correct? y/n: "))
-            iters2 = 0
-            while not yesno_isvalid(examplesok):
-                iters2 += 1
-                if iters2 > 1000:
-                    raise CloseSpider(
-                        'Maxmimum iterations exceeded; while loop broken')
-                    break
-                examplesok = input(
-                    colors.warning("Invalid entry. Please enter y or n: ")
-                    )
-            if examplesok in "yY":
+            if yesno_prompt(
+                colors.prompt('Is that correct? y/n: '),
+                colors.warning('Invalid entry. Please enter y or n: ')
+            ):
                 satisfied = True
         for num in userchoice:
             print()
@@ -179,21 +113,11 @@ class WordSpider(scrapy.Spider):
                 print(colors.prompt("you entered:"))
                 print()
                 print(colors.parrot(translation))
-                confirm = input(
-                    colors.prompt("Is that correct? y/n: "))
-                iter5 = 0
-                while not yesno_isvalid(confirm):
-                    iter5 += 1
-                    if iter5 > 1000:
-                        raise CloseSpider(
-                            'Maxmimum iterations exceeded; while loop broken')
-                        break
-                    print()
-                    confirm = input(
-                        colors.prompt(
-                            "invalid selection. Please enter y or n. "
-                        ))
-                if confirm in 'yY':
+
+                if yesno_prompt(
+                    'Is that correct? y/n: ',
+                    'Invalid selection. Please enter y or n: '
+                ):
                     satisfied = True
                 else:
                     print(output_list[num])
