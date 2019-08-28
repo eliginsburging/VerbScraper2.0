@@ -181,27 +181,20 @@ def weave():
                             tentative_text = tentative_text.replace(
                                 word.lower(), stress_dict[word.lower()][int(user_in) - 1], 1
                             )
-                            print(f'replacing {word} with {stress_dict[word.lower()][int(user_in) - 1]}')
-                            print()
                             tentative_text = tentative_text.replace(
                                 word.capitalize(),
                                 stress_dict[word.lower()][int(user_in) -1].capitalize(),
                                 1
                             )
-                            print(f'replacing {word.capitalize()} with {stress_dict[word.lower()][int(user_in) -1].capitalize()}')
-                            print()
                         else:
                             tentative_text = tentative_text.replace(
                                 word.lower(), stress_dict[word.lower()][0], 1
                             )
-                            print(f'replacing {word} with {stress_dict[word.lower()][0]}')
-                            print()
                             tentative_text = tentative_text.replace(
                                 word.capitalize(),
                                 stress_dict[word.lower()][0].capitalize(),
                                 1
                             )
-                            print(f'replacing {word.capitalize()} with {stress_dict[word.lower()][0].capitalize()}')
                 linestowrite.append(
                     tentative_text + ';' + row['translation'] + '\n')
             cards_written = 0
