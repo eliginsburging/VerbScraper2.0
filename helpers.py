@@ -1,7 +1,7 @@
 from scrapy.exceptions import CloseSpider
 
 
-vowels = 'аяэеоуюиы'  # used to check if word needs stress
+vowels = 'аяэеоуюиыАЯЭЕОУЮИЫ'  # used to check if word needs stress
 
 
 def input_isvalid(numstr, target):
@@ -83,6 +83,8 @@ def man_stress(word, index):
     returns a copy of the string where the character at that
     index has been surrounded by an html font tag
     """
+    assert type(word) == str and len(word) > 2
+    assert index in range(len(word))
     return (
         word[:index] +
         "<font color='#0000ff'>" +
