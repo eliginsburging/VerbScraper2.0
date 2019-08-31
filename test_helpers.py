@@ -1,6 +1,8 @@
 import unittest
 import helpers
-from helpers import vowels
+import os
+from csv import DictReader
+
 
 class TestHelper(unittest.TestCase):
 
@@ -58,6 +60,23 @@ class TestHelper(unittest.TestCase):
         self.assertFalse(
             helpers.is_valid_list('a;alkjdf', [1, 2, 3])
         )
+
+    def test_write_man_input(self):
+        dict_to_write = {
+            'example': ['ex1', 'ex2', 'ex3', 'ex4'],
+            'translation': ['tr1', 'tr2', 'tr3', 'tr4']
+        }
+        helpers.write_man_input(dict_to_write, 'test.csv')
+        with open('test.csv') as csv_file:
+            reader = DictReader(csv_file)
+            counter = 0
+            for row in reader:
+                self.assertEqual(row['example'],
+                                 dict_to_write['example'][counter])
+                self.assertEqual(row['translation'],
+                                 dict_to_write['translation'][counter])
+                counter += 1
+        os.system('rm test.csv')
 
 
 if __name__ == '__main__':

@@ -1,3 +1,4 @@
+import csv
 from scrapy.exceptions import CloseSpider
 
 
@@ -51,7 +52,8 @@ def yesno_prompt(prompt, errorprompt):
     if userstring == "n":
         return False
     else:
-        raise RuntimeError('User input validation failed; validator returned none!')
+        raise RuntimeError(
+            'User input validation failed; validator returned none!')
         raise CloseSpider
 
 
@@ -126,6 +128,122 @@ def is_valid_list(userin, example_list):
         if num < 0 or num > len(example_list) - 1:
             return False
     return True
+
+
+def gather_man_input():
+    """
+    user prompts to manually gather a collection of manually entered examples;
+    returns a dictionary where the keys are 'examples' and 'translation'
+    and the values are lists of corresponding exmples and translations,
+    respectively
+    """
+    manual_dict = {'example': [],
+                   'translation': []}
+    enough = False
+    itercount = 0
+    while not enough:
+        itercount += 1
+        if itercount > 1000:
+            raise RuntimeError(
+                'Something went wrong. Maximum iterations exceeded when '
+                'seeking user generated examples!')
+        user_in = yesno_prompt(
+            colors.prompt(
+                'Would you like to enter any additional examples '
+                'manually? y/n: '),
+            colors.warning('Invalid entry. Please enter y or n: '))
+        if not user_in:
+            enough = True
+        else:
+            acceptable = False
+            acciter = 0
+            while not acceptable:
+                acciter += 1
+                if acciter > 1000:
+                    raise RuntimeError(
+                        'Maximum iterations exceeded; loop broken'
+                    )
+                    break
+                user_ex = input(
+                    colors.prompt(
+                        "Enter an example in Russian or 'c' to cancel: "
+                    )
+                )
+                if user_ex != 'c':
+                    print("You entered:")
+                    print(colors.parrot(user_ex))
+                    exok = yesno_prompt(
+                        colors.prompt('Is that correct? y/n: '),
+                        colors.warning(
+                            'Invalid entry. Please enter y or n: ')
+                    )
+                    if exok:
+                        acceptable = True
+                else:
+                    break
+                if acceptable:
+                    tr_accept = False
+                    triter = 0
+                    while not tr_accept:
+                        print(colors.parrot(user_ex))
+                        triter += 1
+                        if triter > 1000:
+                            raise RuntimeError(
+                                'Maximum iterations exceeded; loop borken'
+                            )
+                            break
+                        user_trans = input(
+                            colors.prompt(
+                                'Please enter a translation of the example '
+                                'above: '
+                                )
+                        )
+                        print(colors.prompt('You entered: '))
+                        print(
+                            colors.parrot(
+                                user_trans
+                            )
+                        )
+                        conf = yesno_prompt(
+                            colors.prompt(
+                                "Is that correct? y/n: "
+                            ),
+                            colors.warning(
+                                'Invalid entry. Please enter y or n: '
+                            )
+                        )
+                        if conf:
+                            tr_accept = True
+            if user_ex != 'c':
+                manual_dict['example'].append(user_ex)
+                manual_dict['translation'].append(user_trans)
+    return manual_dict
+
+
+def write_man_input(dictionary, filename):
+    """
+    takes a dictionary where each key is a csv table column and each value is a
+    list of objects to be placed in that column
+    opens csv file with name filename and appends values with corresponding
+    indexes as rows in the dicionary
+    for instance, the dictionary might look like:
+    {'example': ['Russian example 1', 'Russian example 2'],
+    'translation': ['translation 1', 'translation 2']}
+    """
+    try:
+        with open(filename, 'r') as csvfile:
+            count = 0
+            for i in enumerate(csvfile):
+                count += 1
+    except FileNotFoundError:
+        with open(filename, 'w') as csvfile:
+            csvfile.write('example,translation\n')
+    with open(filename, 'a') as csvfile:
+        fieldnames = ['example', 'translation']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        for i in range(len(dictionary['example'])):
+            writer.writerow({'example': dictionary['example'][i],
+                             'translation': dictionary['translation'][i]})
 
 
 class colors:

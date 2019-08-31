@@ -3,7 +3,7 @@ import shlex
 import os
 from subprocess import Popen
 from helpers import colors
-from helpers import yesno_isvalid
+from helpers import yesno_isvalid, yesno_prompt, gather_man_input, write_man_input
 
 
 def word_list(string):
@@ -69,24 +69,6 @@ def success_banner(message):
     print(colors.information('&' * (message_len + 8)))
 
 
-def man_input(dictionary, filename):
-    """
-    takes a dictionary where each key is a csv table column and each value is a
-    list of objects to be placed in that column
-    opens csv file with name filename and appends values with corresponding
-    indexes as rows in the dicionary
-    for instance, the dictionary might look like:
-    {'example': ['Russian example 1', 'Russian example 2'],
-    'translation': ['translation 1', 'translation 2']}
-    """
-    with open(filename, 'a') as csvfile:
-        fieldnames = ['example', 'translation']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        for i in range(len(dictionary['example'])):
-            writer.writerow({'example': dictionary['example'][i],
-                             'translation': dictionary['translation'][i]})
-
-
 def weave():
     """
     runs word spider and stress spider, generating csv files.
@@ -94,38 +76,17 @@ def weave():
     with stressed examples and tranlsations which can be uploaded
     to Anki
     """
+    # remove examples.csv and stresses.csv if they exist
+    os.system('rm examples.csv')
+    os.system('rm stresses.csv')
     # run crawls in separate processes and wait for the results
     cmd = shlex.split('scrapy crawl wordspider')
     p = Popen(cmd)
     p.wait()
     # prompt user for manually added examples in addition to crawled examples
-    # manual_dict = {'example': [],
-    #                'translation': []}
-    # enough = False
-    # itercount = 0
-    # while not enough:
-    #     itercount += 1
-    #     if itercount > 1000:
-    #         raise RuntimeError(
-    #             'Something went wrong. Maximum iterations exceeded when seeking user generated examples!')
-    #     user_in = input(colors.prompt(
-    #         'Would you like to enter any additional examples manually? y/n: '))
-    #     itercount2 = 0
-    #     while not yesno_isvalid(user_in):
-    #         itercount2 += 1
-    #         if itercount2 > 1000:
-    #             raise InterruptedError
-    #             print('Something went wrong; max iterations exceeded')
-    #             break
-    #         user_in = input(colors.prompt(
-    #             'Invalid entry, please enter y or n: '
-    #         ))
-    #     if user_in in 'Nn':
-    #         enough = True
-    #     else:
-            # prompt user for example
-            # prompt user for translation
-            # append user example and translation to dictionary lists
+    man_examples = gather_man_input()
+    if len(man_examples['example']) > 0:
+        write_man_input(man_examples, 'examples.csv')
     # if len dictionary lists > 0, write dictionary lists to examples.csv
     cmd2 = shlex.split('scrapy crawl stressspider')
     p2 = Popen(cmd2)
