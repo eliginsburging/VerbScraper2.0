@@ -1,7 +1,7 @@
 # VerbScraper2.0
 Scraping the internet to create stressed Russian vocabulary flashcards for Anki
 
-The basic idea of this tool is fairly simple -- it takes one input (a list of Russian words in a text file) and (with user input along the way) generates a text file which can be uploaded to Anki to quickly create flashcards of example sentences (with stresses marked) containing those words.
+The basic idea of this tool is fairly simple -- it takes one input (a list of Russian words in a text file) and (with user input along the way) generates a text file which can be uploaded to Anki to quickly create flashcards of example sentences (with stresses marked) containing those words. The tool also allows for manual entry of example sentences,which will automatically be stressed.
 
 ## The Input - toscrape.txt
 This file should contain a list of Russian words on newlines. These are the target words for flashcard creation. A snippet from this file might look as follows:
@@ -27,8 +27,9 @@ A snippet from this file might look as follows:
 **----------------------**<br>
 
 ## What this tool *will* do
-* Fetch approximately 45 example sentences per word you feed in (from kartaslov.ru) and allow you to choose which examples to use as flash cards.
-* Fetch stresses for the words in the example sentences you choose (from где-ударение.рф)
+* Fetch approximately multiple example sentences per word you feed in from kartaslov.ru, display them in descending order of length, and allow you to choose which examples to use as flash cards.
+* Prompt you to enter your own examples (optional)
+* Fetch stresses for the words in the example sentences you choose/enter (from где-ударение.рф)
 * Allow you to manually select the stresses for words which do not appear on где-ударение.рф
 
 ## What this tool *won't* do
@@ -36,14 +37,16 @@ A snippet from this file might look as follows:
   * you will be prompted to enter your own translations
 * Choose which stress is appropriate in your selected examples when multiple stress options appear on где-ударение.рф
   * you will be prompted to select the stress variant appropriate to the example you selected
+* Determine what stress is appropriate if a word does not appear on где-ударение.рф
+  * you will be prompted to select the appropriate stress for such words
   
 ## A few caveats
-* I have only tested this code on Manjaro linux. Because the code relies on subprocesses and shell commands to run scrapy spiders (and ANSI escape codes to color terminal output), I cannot guarantee that it will work on Mac or Windows.
-* This tool relies on one package which is not in the standard python library -- Scrapy. I recommend you install requirements.txt in a virtual environment.
+* I have only tested this code on Manjaro Linux. Because the code relies on subprocesses and shell commands to run scrapy spiders (and ANSI escape codes to color terminal output), I cannot guarantee that it will work on Mac or Windows.
+* This tool relies on two packages which are not in the standard python library -- Scrapy and Pyfiglet. I recommend you install requirements.txt in a virtual environment.
 * This tool can retrieve information from the websites noted above. What you choose to do with that inforamtion after it has been retrieved is your responsibility. I do not advocate publishing shared decks based on Anki cards created with this tool. This tool was developed to automate a process I was previously carrying out manually to create a personal deck. I have not published any cards gathered with this tool apart from the examples listed in this readme file above.
 
 ## Instructions for use
-* Install scrapy (preferably in a virtual environment)
+* Install scrapy and pyfiglet (preferably in a virtual environment)
 * Place desired target words on new lines in a file named toscrape.txt (as described above).
   * This file should be in the same directory as loom.py
 * Within your terminal (with your virtual environment activated) run loom.py
