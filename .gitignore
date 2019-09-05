@@ -1,5 +1,6 @@
 *.pyc
-*.txt
+toscrape.txt
+flashcards.txt
 *.html
 *.csv
 *.log

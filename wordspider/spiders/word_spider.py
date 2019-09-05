@@ -20,7 +20,6 @@ class WordSpider(scrapy.Spider):
         urls = ['https://kartaslov.ru/предложения-со-словом/' +
                 word[:-1] for word in words]
         for url in urls:
-            print(url)
             yield scrapy.Request(url=url, callback=self.parse)
 
     def parse(self, response):
@@ -52,6 +51,7 @@ class WordSpider(scrapy.Spider):
             target = target.replace('<b>', '')
             target = target.replace('</b>', '')
             output_list.append(target)
+        output_list.sort(key=lambda s: len(s), reverse=True)
         print(divider1)
         print(divider1)
         satisfied = False
@@ -63,10 +63,13 @@ class WordSpider(scrapy.Spider):
                     'Maxmimum iterations exceeded; while loop broken')
                 break
             for num, sentence in enumerate(output_list):
-                print(f'{num} - {sentence[:-1]}')
+                if num % 2 == 0:
+                    print(colors.parrot(f'{num} - {sentence[:-1]}'))
+                else:
+                    print(f'{num} - {sentence[:-1]}')
             print()
             userchoice = input(
-                colors.prompt('Enter the numbers of the examples above which'
+                colors.prompt('Enter the numbers of the examples above which '
                               'you would like to save, separated by commas: ')
                 )
             iter4 = 0

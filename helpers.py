@@ -3,6 +3,7 @@ from scrapy.exceptions import CloseSpider
 
 
 vowels = 'аяэеоуюиыАЯЭЕОУЮИЫ'  # used to check if word needs stress
+rusalph = 'аАбБвВгГдДеЕёЁжЖзЗиИйЙкКлЛмМнНоОпПрРсСтТуУфФхХцЦчЧшШщЩъЪыЫьЬэЭюЮяЯ'
 
 
 def input_isvalid(numstr, target):
@@ -130,6 +131,18 @@ def is_valid_list(userin, example_list):
     return True
 
 
+def validate_word(word):
+    """
+    Takes a string. Removes newlines and returns True if all remaining
+    characters are in the russian alphabet; false otherwise
+    """
+    word = word.replace('\n', '')
+    for letter in word:
+        if letter not in rusalph:
+            return False
+    return True
+
+
 def gather_man_input():
     """
     user prompts to manually gather a collection of manually entered examples;
@@ -149,7 +162,7 @@ def gather_man_input():
                 'seeking user generated examples!')
         user_in = yesno_prompt(
             colors.prompt(
-                'Would you like to enter any additional examples '
+                'Would you like to enter any examples '
                 'manually? y/n: '),
             colors.warning('Invalid entry. Please enter y or n: '))
         if not user_in:
@@ -220,6 +233,35 @@ def gather_man_input():
     return manual_dict
 
 
+def word_list(string):
+    """
+    Takes a string, removes any punctuation, and returns a list of the words
+    """
+    string = string.replace(',', '')
+    string = string.replace('.', '')
+    string = string.replace('!', '')
+    string = string.replace('?', '')
+    string = string.replace('—', '')
+    string = string.replace('«', '')
+    string = string.replace('»', '')
+    string = string.replace(':', '')
+    string = string.replace(';', '')
+    return string.split()
+
+
+def visual_stress(word):
+    """
+    Takes a string and returns that string without html font tags
+    and with the content which was surrounded by those tags capitalized
+    """
+    stress_index = word.index('>') + 1
+    marked_stress = (word[:stress_index] +
+                     word[stress_index].capitalize() +
+                     word[stress_index + 1:])
+    marked_stress = marked_stress.replace("<font color='#0000ff'>", "")
+    return marked_stress.replace("</font>", "")
+
+
 def write_man_input(dictionary, filename):
     """
     takes a dictionary where each key is a csv table column and each value is a
@@ -244,6 +286,27 @@ def write_man_input(dictionary, filename):
         for i in range(len(dictionary['example'])):
             writer.writerow({'example': dictionary['example'][i],
                              'translation': dictionary['translation'][i]})
+
+
+def success_banner(message):
+    """
+    Takes a string and prints that string surrounded by a green box of &s
+    """
+    message_len = len(message)
+    spacer = '   '
+    print(colors.information('&' * (message_len + 8)))
+    print(colors.information('&') +
+          (' ' * (message_len + 6)) +
+          colors.information('&'))
+    print(colors.information('&') +
+          spacer +
+          message +
+          spacer +
+          colors.information('&'))
+    print(colors.information('&') +
+          (' ' * (message_len + 6)) +
+          colors.information('&'))
+    print(colors.information('&' * (message_len + 8)))
 
 
 class colors:

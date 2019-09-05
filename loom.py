@@ -1,72 +1,17 @@
 import csv
 import shlex
 import os
+import sys
+from pyfiglet import Figlet
 from subprocess import Popen
 from helpers import colors
-from helpers import yesno_isvalid, yesno_prompt, gather_man_input, write_man_input
-
-
-def word_list(string):
-    """
-    Takes a string, removes any punctuation, and returns a list of the words
-    """
-    string = string.replace(',', '')
-    string = string.replace('.', '')
-    string = string.replace('!', '')
-    string = string.replace('?', '')
-    string = string.replace('—', '')
-    string = string.replace('«', '')
-    string = string.replace('»', '')
-    string = string.replace(':', '')
-    string = string.replace(';', '')
-    return string.split()
-
-
-def input_isvalid(numstr, target):
-    """
-    takes a string of user input and an iterable;
-    returns true if the string can be converted to an int
-    which is a valid index of target
-    """
-    try:
-        numstr = int(numstr)
-    except ValueError:
-        return False
-    return numstr - 1 >= 0 and numstr - 1 <= len(target) - 1
-
-
-def visual_stress(word):
-    """
-    Takes a string and returns that string without html font tags
-    and with the content which was surrounded by those tags capitalized
-    """
-    stress_index = word.index('>') + 1
-    marked_stress = (word[:stress_index] +
-                     word[stress_index].capitalize() +
-                     word[stress_index + 1:])
-    marked_stress = marked_stress.replace("<font color='#0000ff'>", "")
-    return marked_stress.replace("</font>", "")
-
-
-def success_banner(message):
-    """
-    Takes a string and prints that string surrounded by a green box of &s
-    """
-    message_len = len(message)
-    spacer = '   '
-    print(colors.information('&' * (message_len + 8)))
-    print(colors.information('&') +
-          (' ' * (message_len + 6)) +
-          colors.information('&'))
-    print(colors.information('&') +
-          spacer +
-          message +
-          spacer +
-          colors.information('&'))
-    print(colors.information('&') +
-          (' ' * (message_len + 6)) +
-          colors.information('&'))
-    print(colors.information('&' * (message_len + 8)))
+from helpers import (gather_man_input,
+                     write_man_input,
+                     word_list,
+                     input_isvalid,
+                     visual_stress,
+                     validate_word,
+                     success_banner)
 
 
 def weave():
@@ -76,15 +21,80 @@ def weave():
     with stressed examples and tranlsations which can be uploaded
     to Anki
     """
+    banner_fig = Figlet(font='banner3-D', width=160)
+    warning_fig = Figlet(font='xcourb', width=160)
+    print(colors.information(banner_fig.renderText('VerbScraper2.0')))
+    # check to see if toscrape.txt exists and warn user if not
+    if not os.path.exists('toscrape.txt'):
+        print(colors.warning(
+            warning_fig.renderText('Warning: toscrape.txt not found')))
+        print(colors.warning('In order to scrape example sentences, you must '
+                             'first create a file in the same directory as '
+                             'loom.py that contains a list of single Russian '
+                             'words, each on its own line. Since this file '
+                             'is missing, you will be prompted to enter '
+                             'your own examples manually.'))
+        toscrape = False
+    else:
+        toscrape = True
+        with open('toscrape.txt') as f:
+            warning1 = "toscrape.txt improperly formatted"
+            warning2 = ("It appears that toscrape.txt is improperly formatted."
+                        " the file should contain only single Russian words on"
+                        " new lines. Launching in manual entry only mode.")
+            if f.read() == '':
+                print(colors.warning(warning1 + '\n' + warning2))
+                toscrape = False
+            else:
+                for line in f:
+                    if not validate_word(line):
+                        toscrape = False
+                        print(colors.warning(warning1 + '\n' + warning2))
+                        break
+        if toscrape:
+            with open('toscrape.txt') as f:
+                print(colors.prompt(
+                    "toscrape.txt appears to be valid and contains the "
+                    "words listed below."))
+                for l in f:
+                    print(
+                        colors.information(
+                            l.replace('\n', '')),)
+                print()
+                answer = input(colors.prompt(
+                    'Would you like to:\n'
+                    '1 - proceed with these words (you will be prompted for '
+                    'optional manual entries as well)\n'
+                    '2 - proceed with manual entries only\n'
+                    'alternatively, enter "exit" to exit.\n'
+                ))
+                iterbreak = 0
+                while answer not in ["1", "2", "exit", "Exit", "EXIT"]:
+                    iterbreak += 1
+                    if iterbreak > 1000:
+                        raise RuntimeError(
+                            "Max iterations exceded! Loop borken")
+                        break
+                    answer = input(colors.prompt(
+                        'Invalid entry. Please enter 1, 2, or exit\n'
+                    ))
+                if answer in ["exit", "Exit", "EXIT"]:
+                    sys.exit(0)
+                if answer == "2":
+                    toscrape = False
     # remove examples.csv and stresses.csv if they exist
-    os.system('rm examples.csv')
-    os.system('rm stresses.csv')
-    # run crawls in separate processes and wait for the results
-    cmd = shlex.split('scrapy crawl wordspider')
-    p = Popen(cmd)
-    p.wait()
+    os.system('rm examples.csv >/dev/null 2>&1')
+    os.system('rm stresses.csv >/dev/null 2>&1')
+    if toscrape:
+        # if the user has supplied toscrape.txt and opted to use it, run
+        # wordspider
+        cmd = shlex.split('scrapy crawl wordspider')
+        p = Popen(cmd)
+        p.wait()
     # prompt user for manually added examples in addition to crawled examples
     man_examples = gather_man_input()
+    if not toscrape and len(man_examples['example']) < 1:
+        raise RuntimeError('No examples provided!')
     if len(man_examples['example']) > 0:
         write_man_input(man_examples, 'examples.csv')
     # if len dictionary lists > 0, write dictionary lists to examples.csv
@@ -140,7 +150,8 @@ def weave():
                                     )
                                 )
                             tentative_text = tentative_text.replace(
-                                word.lower(), stress_dict[word.lower()][int(user_in) - 1], 1
+                                word.lower(),
+                                stress_dict[word.lower()][int(user_in) - 1], 1
                             )
                             tentative_text = tentative_text.replace(
                                 word.capitalize(),
