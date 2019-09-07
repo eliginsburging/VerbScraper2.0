@@ -21,8 +21,8 @@ def weave():
     with stressed examples and tranlsations which can be uploaded
     to Anki
     """
-    banner_fig = Figlet(font='banner3-D', width=160)
-    warning_fig = Figlet(font='xcourb', width=160)
+    banner_fig = Figlet(font='banner3-D', width=120)
+    warning_fig = Figlet(font='xcourb', width=120)
     print(colors.information(banner_fig.renderText('VerbScraper2.0')))
     # check to see if toscrape.txt exists and warn user if not
     if not os.path.exists('toscrape.txt'):
