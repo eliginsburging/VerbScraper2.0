@@ -1,7 +1,7 @@
 import scrapy
 import csv
 import logging
-from urllib import parse
+import urllib
 from scrapy.loader import ItemLoader
 from scrapy.exceptions import CloseSpider
 from helpers import input_isvalid, yesno_prompt, color_stress, man_stress, needs_stress, colors
@@ -62,7 +62,7 @@ class StressSpider(scrapy.Spider):
             yield scrapy.Request(url=url, callback=self.parse)
 
     def parse(self, response):
-        word_of_interest = parse.unquote(response.url)[49:-1]
+        word_of_interest = urllib.parse.unquote(response.url)[49:-1]
         if response.status == 404:
             warning = f'\n\n\nWARNING: {word_of_interest} failed\n\n\n'
             self.logger.warning(warning)

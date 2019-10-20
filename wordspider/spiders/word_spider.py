@@ -1,4 +1,5 @@
 import scrapy
+import urllib
 from scrapy.loader import ItemLoader
 from scrapy.exceptions import CloseSpider
 from wordspider.items import WordspiderItem
@@ -24,6 +25,7 @@ class WordSpider(scrapy.Spider):
 
     def parse(self, response):
         output_list = []
+        target_word = urllib.parse.unquote(response.url)[43:]
         examples = response.xpath(
             "//div[@class='v2-sentence-box'][not(@style='display: inline-block;')][not(@style='height: 317px; padding-bottom: 25px;  padding-top: 5px; display: inline-block;')]").getall()
         for verbose_example in examples:
@@ -52,84 +54,102 @@ class WordSpider(scrapy.Spider):
             target = target.replace('</b>', '')
             output_list.append(target)
         output_list.sort(key=lambda s: len(s), reverse=True)
-        print(divider1)
-        print(divider1)
-        satisfied = False
-        iters = 0
-        while not satisfied:
-            iters += 1
-            if iters > 1000:
-                raise CloseSpider(
-                    'Maxmimum iterations exceeded; while loop broken')
-                break
-            for num, sentence in enumerate(output_list):
-                if num % 2 == 0:
-                    print(colors.parrot(f'{num} - {sentence[:-1]}'))
-                else:
-                    print(f'{num} - {sentence[:-1]}')
+        if len(output_list) < 1:
             print()
-            userchoice = input(
-                colors.prompt('Enter the numbers of the examples above which '
-                              'you would like to save, separated by commas: ')
-                )
-            iter4 = 0
-            while not is_valid_list(userchoice, output_list):
-                iter4 += 1
-                if iter4 > 1000:
-                    raise CloseSpider(
-                        'Maxmimum iterations exceeded; while loop broken')
-                    break
-                userchoice = input(
-                    colors.warning(
-                        'Invalid choice. Please enter the numbers of the '
-                        'examples you would like to save separated by commas: '
-                        ))
-            userchoice = userchoice.split(',')
-            userchoice = [int(s) for s in userchoice]
-            userchoice = set(userchoice)
-            # ask user to confirm
-            print(colors.prompt("you selected:"))
-            for num in userchoice:
-                print(colors.parrot(f'{num} - {output_list[num]}'))
-            if yesno_prompt(
-                colors.prompt('Is that correct? y/n: '),
-                colors.warning('Invalid entry. Please enter y or n: ')
-            ):
-                satisfied = True
-        for num in userchoice:
             print()
-            print(output_list[num])
-            translation = input(
-                colors.prompt(
-                    "Please enter a translation for the sentence above: ")
+            print(
+                colors.warning(f"ERROR: NO EXAMPLES FOUND FOR {target_word}!")
             )
-
+            print(
+                colors.warning("Did you misspell the word?")
+            )
+            print(
+                colors.warning(f"Skipping {target_word}.")
+            )
+            print()
+            print()
+            pass
+        else:
+            print(divider1)
+            print(divider1)
             satisfied = False
-            iters3 = 0
+            iters = 0
             while not satisfied:
-                iters3 += 1
-                if iters3 > 1000:
+                iters += 1
+                if iters > 1000:
                     raise CloseSpider(
                         'Maxmimum iterations exceeded; while loop broken')
                     break
+                for num, sentence in enumerate(output_list):
+                    if num % 2 == 0:
+                        print(colors.parrot(f'{num} - {sentence[:-1]}'))
+                    else:
+                        print(f'{num} - {sentence[:-1]}')
                 print()
-                print(colors.prompt("you entered:"))
-                print()
-                print(colors.parrot(translation))
-
+                userchoice = input(
+                    colors.prompt(
+                        'Enter the numbers of the examples above which '
+                        'you would like to save, separated by commas: ')
+                    )
+                iter4 = 0
+                while not is_valid_list(userchoice, output_list):
+                    iter4 += 1
+                    if iter4 > 1000:
+                        raise CloseSpider(
+                            'Maxmimum iterations exceeded; while loop broken')
+                        break
+                    userchoice = input(
+                        colors.warning(
+                            'Invalid choice. Please enter the numbers of the '
+                            'examples you would like to save separated by '
+                            'commas: '
+                            ))
+                userchoice = userchoice.split(',')
+                userchoice = [int(s) for s in userchoice]
+                userchoice = set(userchoice)
+                # ask user to confirm
+                print(colors.prompt("you selected:"))
+                for num in userchoice:
+                    print(colors.parrot(f'{num} - {output_list[num]}'))
                 if yesno_prompt(
-                    'Is that correct? y/n: ',
-                    'Invalid selection. Please enter y or n: '
+                    colors.prompt('Is that correct? y/n: '),
+                    colors.warning('Invalid entry. Please enter y or n: ')
                 ):
                     satisfied = True
-                else:
-                    print(output_list[num])
-                    translation = input(
-                        colors.prompt(
-                            'Please enter a translation for the sentence '
-                            'above: ')
-                    )
-            l = ItemLoader(item=WordspiderItem(), response=response)
-            l.add_value('example', output_list[num][:-1])
-            l.add_value('translation', translation)
-            yield l.load_item()
+            for num in userchoice:
+                print()
+                print(output_list[num])
+                translation = input(
+                    colors.prompt(
+                        "Please enter a translation for the sentence above: ")
+                )
+
+                satisfied = False
+                iters3 = 0
+                while not satisfied:
+                    iters3 += 1
+                    if iters3 > 1000:
+                        raise CloseSpider(
+                            'Maxmimum iterations exceeded; while loop broken')
+                        break
+                    print()
+                    print(colors.prompt("you entered:"))
+                    print()
+                    print(colors.parrot(translation))
+
+                    if yesno_prompt(
+                        'Is that correct? y/n: ',
+                        'Invalid selection. Please enter y or n: '
+                    ):
+                        satisfied = True
+                    else:
+                        print(output_list[num])
+                        translation = input(
+                            colors.prompt(
+                                'Please enter a translation for the sentence '
+                                'above: ')
+                        )
+                l = ItemLoader(item=WordspiderItem(), response=response)
+                l.add_value('example', output_list[num][:-1])
+                l.add_value('translation', translation)
+                yield l.load_item()
