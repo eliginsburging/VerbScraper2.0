@@ -84,7 +84,7 @@ class StressSpider(scrapy.Spider):
                         print(colors.parrot(f'{letter:3s}'), end=" ")
                     print(' ')
                     for i in range(len(word_of_interest)):
-                        print(colors.parrot(f'{str(i):3s}'), end=" ")
+                        print(colors.parrot(f'{str(i + 1):3s}'), end=" ")
                     print(' ')
                     stress_choice = input(colors.prompt(
                         "Please enter the number of the letter you wish to stress: "))
@@ -98,17 +98,17 @@ class StressSpider(scrapy.Spider):
                             print(colors.parrot(f'{letter:3s}'), end=" ")
                         print()
                         for i in range(len(word_of_interest)):
-                            print(colors.parrot(f'{str(i):3s}'), end=" ")
+                            print(colors.parrot(f'{str(i + 1):3s}'), end=" ")
                         print()
                         stress_choice = input(colors.warning(
                             "Invalid entry. Please select one of the numbers listed above "))
                     if yesno_prompt(colors.prompt(
-                        f"You want to place the stress on '{word_of_interest[int(stress_choice)]}' at position {stress_choice}, correct? y/n "),
+                        f"You want to place the stress on '{word_of_interest[int(stress_choice) - 1]}' at position {stress_choice}, correct? y/n "),
                         colors.warning("Invalid entry. Please enter y or n: ")
                     ):
                         user_satisfied = True
                         target_word_stressed = man_stress(word_of_interest,
-                                                          int(stress_choice))
+                                                          int(stress_choice) - 1)
                         print(colors.warning(target_word_stressed))
                         l = ItemLoader(item=StressspiderItem(), response=response)
                         l.add_value('stressed', target_word_stressed)
