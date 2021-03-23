@@ -152,6 +152,47 @@ def gather_man_input():
     """
     manual_dict = {'example': [],
                    'translation': []}
+    try:
+        # check whether manualexamples.txt exists. If so prompt user whether
+        # they want to import it
+        with open("manualexamples.txt", 'r') as m:
+            manexlist = m.readlines()
+            itercount = 0
+            if len(manexlist) > 0:
+                enough = False
+                print("It appears manualexamples.txt exists and contains the "
+                      "following contents:")
+                ruexlist = []
+                enexlist = []
+                for ex in manexlist:
+                    ruex, enex = ex[:-1].split("|")
+                    ruexlist.append(ruex)
+                    enexlist.append(enex)
+                    print(colors.parrot(ruex))
+                    print(enex)
+            else:
+                enough = True
+            while not enough:
+                itercount += 1
+                if itercount > 1000:
+                    raise RuntimeError(
+                        'something went wrong. Max iterations exceeded when '
+                        'seeking user confirmation regarding '
+                        'manualexamples.txt!'
+                    )
+                user_in = yesno_prompt(
+                    colors.prompt('It appears manualexamples.txt exists. '
+                                  'Would you like to  import it? y/n: '),
+                    colors.warning('Invalid entry. Please enter y or n: ')
+                )
+                if user_in:
+                    manual_dict['example'] += ruexlist
+                    manual_dict['translation'] += enexlist
+                    enough = True
+                else:
+                    enough = True
+    except IOError:
+        pass
     enough = False
     itercount = 0
     while not enough:

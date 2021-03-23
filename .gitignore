@@ -1,6 +1,7 @@
 *.pyc
 toscrape.txt
 flashcards.txt
+manualexamples.txt
 *.html
 *.csv
 *.log
