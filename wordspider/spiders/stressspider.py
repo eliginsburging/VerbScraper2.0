@@ -126,7 +126,7 @@ class StressSpider(scrapy.Spider):
             множественное число слова гора\t\t\t\t\t</div>']
             """
             stresses = response.xpath(
-                "//div[@class='rule ']").getall()
+                "//div[@class='rule']").getall()
             """
             Creates a list of the HTML elements containing the stress, e.g.,
             ['<div class="rule ">\n\t\n\t\t В указанном выше варианте ударение
