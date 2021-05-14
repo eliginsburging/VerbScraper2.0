@@ -66,54 +66,10 @@ class StressSpider(scrapy.Spider):
         if response.status == 404:
             warning = f'\n\n\nWARNING: {word_of_interest} failed\n\n\n'
             self.logger.warning(warning)
-            print(colors.prompt(
-                f"It appears no stress could be found for {word_of_interest}"))
-            if yesno_prompt(
-                colors.prompt(
-                    'Would you like to enter a stress mannually? y/n: '),
-                colors.warning(
-                    'Invalid entry. Please enter y or n: ')):
-                user_satisfied = False
-                iters = 0
-                while not user_satisfied:
-                    iters += 1
-                    if iters > 1000:
-                        raise CloseSpider('Maxmimum iterations exceeded; while loop broken')
-                        break
-                    for letter in word_of_interest:
-                        print(colors.parrot(f'{letter:3s}'), end=" ")
-                    print(' ')
-                    for i in range(len(word_of_interest)):
-                        print(colors.parrot(f'{str(i + 1):3s}'), end=" ")
-                    print(' ')
-                    stress_choice = input(colors.prompt(
-                        "Please enter the number of the letter you wish to stress: "))
-                    iters2 = 0
-                    while not input_isvalid(stress_choice, word_of_interest):
-                        iters2 += 1
-                        if iters2 > 1000:
-                            raise CloseSpider('Maxmimum iterations exceeded; while loop broken')
-                            break
-                        for letter in word_of_interest:
-                            print(colors.parrot(f'{letter:3s}'), end=" ")
-                        print()
-                        for i in range(len(word_of_interest)):
-                            print(colors.parrot(f'{str(i + 1):3s}'), end=" ")
-                        print()
-                        stress_choice = input(colors.warning(
-                            "Invalid entry. Please select one of the numbers listed above "))
-                    if yesno_prompt(colors.prompt(
-                        f"You want to place the stress on '{word_of_interest[int(stress_choice) - 1]}' at position {stress_choice}, correct? y/n "),
-                        colors.warning("Invalid entry. Please enter y or n: ")
-                    ):
-                        user_satisfied = True
-                        target_word_stressed = man_stress(word_of_interest,
-                                                          int(stress_choice) - 1)
-                        print(colors.warning(target_word_stressed))
-                        l = ItemLoader(item=StressspiderItem(), response=response)
-                        l.add_value('stressed', target_word_stressed)
-                        l.add_value('clean', word_of_interest)
-                        yield l.load_item()
+            l = ItemLoader(item=StressspiderItem(), response=response)
+            l.add_value('stressed', word_of_interest)
+            l.add_value('clean', word_of_interest)
+            yield l.load_item()
         else:
             # will output items with a clean (unstressed) version and a stressed version
             explanations = response.xpath('//div[@class="word"]').getall()

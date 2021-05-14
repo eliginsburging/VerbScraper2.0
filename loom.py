@@ -11,7 +11,10 @@ from helpers import (gather_man_input,
                      input_isvalid,
                      visual_stress,
                      validate_word,
-                     success_banner)
+                     success_banner,
+                     needs_stress,
+                     yesno_prompt,
+                     man_stress)
 
 
 def weave():
@@ -121,6 +124,56 @@ def weave():
                 example_words = word_list(row['example'])
                 for i, word in enumerate(example_words):
                     if word in stress_dict.keys() or word.lower() in stress_dict.keys():
+                        try:
+                            target_word = stress_dict[word][0]
+                        except KeyError:
+                            target_word = stress_dict[word.lower()][0]
+                        if "</font>" not in target_word.lower():
+                            print()
+                            print(colors.prompt(
+                                f"It appears no stress was found for {word}"))
+                            if yesno_prompt(
+                                colors.prompt(
+                                    'Would you like to enter a stress mannually? y/n: '),
+                                colors.warning(
+                                    'Invalid entry. Please enter y or n: ')):
+                                user_satisfied = False
+                                iters = 0
+                                while not user_satisfied:
+                                    iters += 1
+                                    if iters > 1000:
+                                        print("max iterations exceeded; break")
+                                        break
+                                    for letter in target_word.lower():
+                                        print(colors.parrot(f'{letter:3s}'), end=" ")
+                                    print(' ')
+                                    for i in range(len(target_word)):
+                                        print(colors.parrot(f'{str(i + 1):3s}'), end=" ")
+                                    print(' ')
+                                    stress_choice = input(colors.prompt(
+                                        "Please enter the number of the letter you wish to stress: "))
+                                    iters2 = 0
+                                    while not input_isvalid(stress_choice, target_word):
+                                        iters2 += 1
+                                        if iters2 > 1000:
+                                            print('Maxmimum iterations exceeded; while loop broken')
+                                            break
+                                        for letter in target_word.lower():
+                                            print(colors.parrot(f'{letter:3s}'), end=" ")
+                                        print()
+                                        for i in range(len(target_word)):
+                                            print(colors.parrot(f'{str(i + 1):3s}'), end=" ")
+                                        print()
+                                        stress_choice = input(colors.warning(
+                                            "Invalid entry. Please select one of the numbers listed above "))
+                                    if yesno_prompt(colors.prompt(
+                                        f"You want to place the stress on '{word[int(stress_choice) - 1]}' at position {stress_choice}, correct? y/n "),
+                                        colors.warning("Invalid entry. Please enter y or n: ")
+                                    ):
+                                        user_satisfied = True
+                                        stress_dict[target_word.lower()][0] = man_stress(target_word.lower(),
+                                                                       int(stress_choice) - 1)
+                                        print()
                         if len(stress_dict[word.lower()]) > 1:
                             print()
                             print(colors.parrot(row['example']))
