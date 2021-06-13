@@ -94,18 +94,36 @@ class StressSpider(scrapy.Spider):
                 # if there is more than one stress variant, add all options
                 for line in stresses:
                     l = ItemLoader(item=StressspiderItem(), response=response)
-                    target_word_stressed = color_stress(line)
-                    l.add_value('stressed', target_word_stressed)
-                    print(f'added {target_word_stressed} and {word_of_interest}')
+                    l.add_value('stressed', target_word_stressed_list[0])
+                    print(f'added {target_word_stressed_list[0]} and {word_of_interest}')
                     l.add_value('clean', word_of_interest)
                     yield l.load_item()
             else:
-                l = ItemLoader(item=StressspiderItem(), response=response)
-                # if only one option for stress exists, add it
-                stressed_line = stresses[0]
-                # isolate target word and mark stress with color html tag
-                target_word_stressed = color_stress(stressed_line)
-                l.add_value('stressed', target_word_stressed)
-                l.add_value('clean', word_of_interest)
-                print(f'added {target_word_stressed} and {word_of_interest}')
-                yield l.load_item()
+                target_word_stressed_list = color_stress(stresses[0])
+                # check to see if multiple options were included in the same div
+                # as for some words with multiple acceptable variants, both
+                # options are in the same div (e.g. держитесь)
+                if len(target_word_stressed_list) > 1:
+                    assert len(target_word_stressed_list) == 2
+                    l1 = ItemLoader(item=StressspiderItem(),
+                                    response=response)
+                    l2 = ItemLoader(item=StressspiderItem(),
+                                    response=response)
+                    l1.add_value('stressed', target_word_stressed_list[0])
+                    print(f'added {target_word_stressed_list[0]} and {word_of_interest}')
+                    l1.add_value('clean', word_of_interest)
+                    l2.add_value('stressed', target_word_stressed_list[1])
+                    print(f'added {target_word_stressed_list[1]} and {word_of_interest}')
+                    l2.add_value('clean', word_of_interest)
+                    for item in (l1.load_item(), l2.load_item()):
+                        yield item
+                else:
+                    l = ItemLoader(item=StressspiderItem(), response=response)
+                    # if only one option for stress exists, add it
+                    stressed_line = stresses[0]
+                    # isolate target word and mark stress with color html tag
+                    target_word_stressed_list = color_stress(stressed_line)
+                    l.add_value('stressed', target_word_stressed_list[0])
+                    l.add_value('clean', word_of_interest)
+                    print(f'added {target_word_stressed_list[0]} and {word_of_interest}')
+                    yield l.load_item()

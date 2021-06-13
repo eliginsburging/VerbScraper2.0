@@ -72,12 +72,15 @@ def color_stress(stressed_line):
     stressed_line = stressed_line.replace('\n', '')
     stressed_line = stressed_line.replace('\t', '')
     stressed_line = stressed_line.replace('.', '')
+    stressed_line = stressed_line.replace(',', '')
     stressed_line = stressed_line.lower()
+    targets = []
     for word in stressed_line.split():
         if '<b>' in word:
             target = word.replace('<b>', "<font color='#0000ff'>")
             target = target.replace('</b>', '</font>')
-            return target
+            targets.append(target)
+    return targets
 
 
 def man_stress(word, index):
