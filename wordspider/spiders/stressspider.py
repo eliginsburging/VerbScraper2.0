@@ -92,10 +92,11 @@ class StressSpider(scrapy.Spider):
             """
             if len(stresses) > 1:
                 # if there is more than one stress variant, add all options
+                print(stresses)
                 for line in stresses:
                     l = ItemLoader(item=StressspiderItem(), response=response)
-                    l.add_value('stressed', target_word_stressed_list[0])
-                    print(f'added {target_word_stressed_list[0]} and {word_of_interest}')
+                    l.add_value('stressed', color_stress(line))
+                    print(f'added {color_stress(line)} and {word_of_interest}')
                     l.add_value('clean', word_of_interest)
                     yield l.load_item()
             else:
